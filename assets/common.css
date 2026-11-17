@@ -1,0 +1,183 @@
+/* ============================================================
+   语文专用站 · 共享样式 common.css
+   设计：纸墨书卷气 + 多色区分 + 大字号大热区，电脑/平板/手机自适应
+   ============================================================ */
+:root{
+  --paper:#f4efe4; --card:#fffdf6; --ink:#232a2c; --muted:#5d6763; --line:#d9d2c1;
+  --deep:#1d2a33; --moon:#f4ecd8;
+  --u1:#4a7c59; --u2:#c07a3e; --u3:#3a6ea5; --u4:#a84b43; --u5:#9c7a2e; --u6:#6b5b95;
+  --prep:#3a6ea5; --go:#b5562f; --sit:#2f7d6b; --gold:#c9a227;
+  --radius:16px;
+  font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;
+  line-height:1.65; color:var(--ink);
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink)}
+h1,h2,h3,h4,p,figure,ul{margin:0;padding:0;list-style:none}
+button{font:inherit;color:inherit}
+img,svg{max-width:100%}
+[hidden]{display:none !important}
+.serif{font-family:"Songti SC",STSong,"Noto Serif CJK SC",serif}
+
+/* 焦点与跳过 */
+.skip{position:absolute;z-index:30;top:10px;left:10px;padding:10px 16px;background:var(--card);
+  border-radius:10px;font-weight:700;text-decoration:none;transform:translateY(-180%)}
+.skip:focus{transform:none}
+:focus-visible{outline:3px solid var(--go);outline-offset:3px;border-radius:6px}
+
+.wrap{width:min(calc(100% - 32px),1060px);margin-inline:auto}
+
+/* ---------- 站点头 ---------- */
+.site-head{background:var(--deep);color:var(--moon);padding:16px 0}
+.site-head .row{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:10px;font-weight:800;font-size:1.15rem;text-decoration:none;color:var(--moon)}
+.brand .logo{width:34px;height:34px;flex:none}
+.crumb{font-size:.85rem;color:#b9c4b4}
+.crumb a{color:#cdd8c4;text-decoration:none}
+.crumb a:hover{text-decoration:underline}
+
+/* ---------- 页头标题块 ---------- */
+.page-head{padding:26px 0 8px}
+.page-head .eyebrow{font-size:.8rem;font-weight:700;letter-spacing:.12em;color:var(--muted)}
+.page-head h1{font-family:"Songti SC",serif;font-size:clamp(1.7rem,4vw,2.5rem);font-weight:800;margin-top:6px}
+.page-head p.lead{color:var(--muted);margin-top:8px;max-width:60ch}
+
+/* ---------- 门户：6册网格 ---------- */
+.books{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;padding:18px 0 30px}
+.book{position:relative;display:block;text-decoration:none;background:var(--card);border:1px solid var(--line);
+  border-radius:var(--radius);padding:22px;min-height:150px;overflow:hidden;transition:transform .12s,box-shadow .2s}
+.book:hover{transform:translateY(-3px);box-shadow:0 14px 28px rgba(0,0,0,.12)}
+.book .spine{position:absolute;left:0;top:0;bottom:0;width:8px}
+.book .term{font-size:.82rem;font-weight:700;letter-spacing:.08em;color:var(--muted)}
+.book .name{font-family:"Songti SC",serif;font-size:1.4rem;font-weight:800;margin-top:6px}
+.book .meta{color:var(--muted);font-size:.86rem;margin-top:8px}
+.book .go-link{margin-top:12px;font-weight:700;font-size:.92rem}
+.book.locked{opacity:.72}
+.book.locked .go-link{color:var(--muted)}
+
+/* ---------- 册目录：单元分组 ---------- */
+.unit{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);margin:18px 0;overflow:hidden}
+.unit-head{display:flex;gap:12px;align-items:center;padding:16px 20px;color:#fff}
+.unit-head .no{font-family:"Songti SC",serif;font-size:1.3rem;font-weight:800;opacity:.9}
+.unit-head .utitle{font-size:1.15rem;font-weight:800}
+.unit-head .utheme{font-size:.82rem;opacity:.85;margin-left:auto}
+.lessons{padding:8px 12px 14px}
+.lesson-item{display:flex;gap:12px;align-items:baseline;padding:11px 10px;border-radius:10px;text-decoration:none;
+  color:var(--ink);border-bottom:1px solid #efe9da}
+.lesson-item:last-child{border-bottom:none}
+.lesson-item:hover{background:#f3efe2}
+.lesson-item .ln{font-weight:800;color:var(--muted);font-size:.9rem;flex:none;width:26px}
+.lesson-item .lt{font-weight:700;font-size:1.05rem}
+.lesson-item .lstar{font-size:.75rem;color:var(--muted);margin-left:4px}
+.lesson-item .lau{margin-left:auto;font-size:.82rem;color:var(--muted)}
+.lesson-item .tag-type{font-size:.72rem;font-weight:700;padding:2px 8px;border-radius:999px;margin-left:8px}
+.extra{display:flex;gap:10px;flex-wrap:wrap;padding:4px 12px 16px}
+.extra a{font-size:.86rem;font-weight:700;padding:8px 14px;border-radius:999px;text-decoration:none;
+  border:1.5px solid var(--line);background:#fbf8ef;color:var(--ink)}
+.extra a:hover{background:#f1ecdd}
+
+/* ---------- 课文页：通用三段 ---------- */
+.lesson-stage{padding-bottom:30px}
+.section-label{display:inline-flex;align-items:center;gap:8px;font-weight:800;font-size:.95rem;margin:22px 0 10px}
+.section-label::before{content:"";width:10px;height:10px;border-radius:3px}
+.lab-prep{color:var(--prep)}.lab-prep::before{background:var(--prep)}
+.lab-read{color:var(--ink)}.lab-read::before{background:var(--ink)}
+.lab-back{color:var(--u1)}.lab-back::before{background:var(--u1)}
+
+.panel{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:20px clamp(16px,3vw,26px)}
+.panel + .panel{margin-top:14px}
+
+/* 场景图 */
+.scene{background:var(--deep);border-radius:12px;padding:10px;margin-bottom:6px}
+.scene svg{display:block;width:100%;height:auto;border-radius:8px}
+.scene-cap{font-size:.82rem;color:var(--muted);margin-top:8px}
+
+/* 原文与可点词 */
+.verse{font-family:"Songti SC",serif;font-size:clamp(1.25rem,3.4vw,1.7rem);font-weight:700;line-height:1.9}
+.verse .word{cursor:pointer;border-radius:7px;padding:1px 4px;position:relative;transition:background .15s}
+.verse .word::after{content:"";position:absolute;left:5px;right:5px;bottom:0;height:2px;background:currentColor;
+  transform:scaleX(0);transition:transform .2s}
+.verse .word:hover::after,.verse .word.on::after{transform:scaleX(1)}
+.verse .word.on{background:#efe9d8}
+.w-go{color:var(--go)}.w-sit{color:var(--sit)}.w-key{color:var(--u3)}.w-gold{color:#8a6d1f}
+.w-red{color:var(--u4)}.w-purple{color:var(--u6)}.w-green{color:var(--u1)}
+.note-line{margin-top:12px;color:var(--muted);font-size:.92rem;min-height:1.5em}
+.note-line b{color:var(--ink)}
+
+/* 普通正文里的可点 */
+.prose{font-size:1.05rem}
+.prose p{margin:10px 0}
+.prose .word{cursor:pointer;border-radius:6px;padding:0 3px}
+.prose .word.on{background:#efe9d8}
+
+/* 翻转卡（字词/修辞，自愿看） */
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px;margin-top:12px}
+.flip{perspective:900px;min-height:120px}
+.flip button{width:100%;min-height:120px;border:1.5px solid var(--line);background:#fbf8ef;border-radius:12px;
+  padding:12px;position:relative;transform-style:preserve-3d;transition:transform .5s;cursor:pointer;text-align:left}
+.flip button.flipped{transform:rotateY(180deg)}
+.flip .face{position:absolute;inset:0;padding:14px;backface-visibility:hidden;display:flex;flex-direction:column;justify-content:center}
+.flip .front{font-weight:800;font-size:1.05rem}
+.flip .front .hint-tap{font-size:.75rem;color:var(--muted);font-weight:600;margin-top:8px}
+.flip .back{transform:rotateY(180deg);font-size:.86rem;color:var(--ink);background:#f3ecd9;border-radius:12px}
+
+/* 按钮三类 */
+.btn{min-height:46px;padding:10px 20px;border-radius:11px;border:1.5px solid #9aa69a;background:var(--card);
+  font-weight:700;cursor:pointer;transition:transform .08s,background .15s;display:inline-flex;align-items:center;gap:8px}
+.btn:hover{background:#eef0e6}
+.btn:active{transform:scale(.97)}
+.btn.solid{border:none;background:var(--u3);color:#fff}
+.btn.solid:hover{filter:brightness(1.06)}
+.btn.gold{border:none;background:var(--gold);color:#231d05}
+.btn.ghost{border-color:transparent;background:transparent;color:var(--muted);text-decoration:underline;
+  text-underline-offset:.2em}
+.btn-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px;align-items:center}
+
+/* 选择/猜想 */
+.choice{min-height:46px;padding:10px 18px;border-radius:11px;border:1.5px solid var(--go);background:var(--card);
+  font-weight:700;cursor:pointer}
+.choice[aria-pressed="true"]{background:var(--go);color:#fff}
+
+/* 开放提问 */
+.big-q{font-size:clamp(1.15rem,2.6vw,1.4rem);font-weight:800}
+.big-q .qm{color:var(--go)}
+.answer-box{width:100%;min-height:96px;margin-top:12px;padding:14px;border-radius:12px;border:1.5px solid var(--line);
+  background:#fbf8ef;font:inherit;resize:vertical}
+.save-tip{font-size:.85rem;color:var(--muted);margin-top:8px}
+
+/* 简单时间轴/线索 */
+.timeline{margin-top:14px;position:relative;padding-left:26px}
+.timeline::before{content:"";position:absolute;left:8px;top:6px;bottom:6px;width:2px;background:var(--line)}
+.tl-item{position:relative;padding:8px 0 8px 6px}
+.tl-item::before{content:"";position:absolute;left:-22px;top:14px;width:12px;height:12px;border-radius:50%;
+  background:var(--card);border:3px solid var(--u2)}
+.tl-item .tl-t{font-weight:800}
+.tl-item .tl-d{color:var(--muted);font-size:.92rem}
+
+/* 列表要点 */
+.dot-list li{position:relative;padding:8px 0 8px 24px;border-bottom:1px dashed #e7e0cf}
+.dot-list li:last-child{border-bottom:none}
+.dot-list li::before{content:"";position:absolute;left:4px;top:16px;width:9px;height:9px;border-radius:50%;background:var(--u3)}
+
+/* 上下课导航 */
+.pager{display:flex;justify-content:space-between;gap:12px;margin-top:24px;flex-wrap:wrap}
+.pager a{text-decoration:none;font-weight:700;color:var(--ink);padding:10px 16px;border:1.5px solid var(--line);
+  border-radius:11px;background:var(--card)}
+.pager a:hover{background:#f1ecdd}
+
+.foot{color:#98a29c;text-align:center;font-size:.82rem;padding:24px 0 36px}
+
+/* ---------- 响应式 ---------- */
+@media (min-width:880px){
+  .books{grid-template-columns:repeat(3,1fr)}
+  .two-col{display:grid;grid-template-columns:1.1fr .9fr;gap:16px;align-items:start}
+}
+@media (max-width:560px){
+  .books{grid-template-columns:1fr}
+  .unit-head{flex-wrap:wrap}
+  .unit-head .utheme{margin-left:0;flex-basis:100%}
+  .lesson-item .lau{display:none}
+}
+@media (prefers-reduced-motion:reduce){
+  *{animation:none !important;transition:none !important}
+}
