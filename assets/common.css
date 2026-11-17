@@ -56,7 +56,7 @@ img,svg{max-width:100%}
 .book.locked .go-link{color:var(--muted)}
 
 /* ---------- 册目录：单元分组 ---------- */
-.unit{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);margin:18px 0;overflow:hidden}
+.unit{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);margin:18px 0;overflow:hidden;scroll-margin-top:78px}
 .unit-head{display:flex;gap:12px;align-items:center;padding:16px 20px;color:#fff}
 .unit-head .no{font-family:"Songti SC",serif;font-size:1.3rem;font-weight:800;opacity:.9}
 .unit-head .utitle{font-size:1.15rem;font-weight:800}
@@ -76,6 +76,18 @@ img,svg{max-width:100%}
   border:1.5px solid var(--line);background:#fbf8ef;color:var(--ink)}
 .extra a:hover{background:#f1ecdd}
 
+/* 顶部单元快捷跳转：吸顶、可横滑 */
+.unit-jump{position:sticky;top:0;z-index:20;display:flex;gap:8px;overflow-x:auto;
+  padding:10px 4px;margin:6px 0;scrollbar-width:none;background:rgba(244,239,228,.96);
+  background:color-mix(in srgb,var(--paper) 94%,transparent);
+  backdrop-filter:blur(6px)}
+.unit-jump::-webkit-scrollbar{display:none}
+.unit-jump a{flex:none;white-space:nowrap;font-size:.86rem;font-weight:800;text-decoration:none;
+  color:var(--ink);padding:9px 14px;border-radius:999px;border:1.5px solid var(--line);background:var(--card);min-height:44px;
+  display:inline-flex;align-items:center}
+.unit-jump a:hover{border-color:var(--uc);color:var(--uc)}
+.unit-jump a::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--uc);margin-right:7px}
+
 /* 继续上次 */
 .resume-btn{display:flex;align-items:center;margin:18px 0 4px;padding:14px 22px;border-radius:var(--radius);
   background:var(--gold);color:#231d05;font-weight:800;text-decoration:none;font-size:1.08rem;min-height:52px}
@@ -93,6 +105,13 @@ img,svg{max-width:100%}
 .mode-btn[aria-pressed="true"]{background:var(--card);box-shadow:0 2px 6px rgba(0,0,0,.14)}
 .mode-btn[data-mode="pre"][aria-pressed="true"]{color:var(--prep)}
 .mode-btn[data-mode="post"][aria-pressed="true"]{color:var(--ink)}
+/* 课内三段跳转 */
+.inpage-nav{display:flex;gap:8px;overflow-x:auto;margin:12px 0 4px;scrollbar-width:none}
+.inpage-nav::-webkit-scrollbar{display:none}
+.inpage-nav a{flex:none;white-space:nowrap;font-size:.85rem;font-weight:700;text-decoration:none;
+  color:var(--muted);background:var(--card);border:1.5px solid var(--line);border-radius:999px;
+  padding:8px 15px;min-height:44px;display:inline-flex;align-items:center}
+.inpage-nav a:hover{color:var(--ink);border-color:var(--ink)}
 .section-label{display:inline-flex;align-items:center;gap:8px;font-weight:800;font-size:.95rem;margin:22px 0 10px}
 .section-label::before{content:"";width:10px;height:10px;border-radius:3px}
 .lab-prep .section-label{color:var(--prep)}.lab-prep .section-label::before{background:var(--prep)}
@@ -230,7 +249,7 @@ img,svg{max-width:100%}
   border-radius:11px;background:var(--card)}
 .pager a:hover{background:#f1ecdd}
 
-.foot{color:#98a29c;text-align:center;font-size:.82rem;padding:24px 0 36px}
+.foot{color:#78817a;text-align:center;font-size:.82rem;padding:24px 0 36px}
 
 /* ---------- 响应式 ---------- */
 @media (min-width:880px){
@@ -248,4 +267,20 @@ img,svg{max-width:100%}
 }
 @media (prefers-reduced-motion:reduce){
   *{animation:none !important;transition:none !important}
+}
+
+/* ---------- 打印 ---------- */
+@media print{
+  body{background:#fff;color:#000}
+  .skip,.site-head,.mode-switch,.inpage-nav,.unit-jump,.pager,.foot,.btn,.sp-btn,.rl-btn,
+  .speak-btn,.save-tip,.read-actions,.bring-btn{display:none !important}
+  .app-root,.wrap,.lesson-stage{padding:0;margin:0;max-width:100%}
+  .panel,.card,.flip{border:1px solid #999;box-shadow:none;background:#fff;break-inside:avoid}
+  .flip .back{position:static;transform:none;display:block;visibility:visible;opacity:1;
+    background:#fff;color:#000;break-inside:avoid}
+  .flip .front{display:block}
+  .lead,.big-q,.guess-ask,.verse,.orig,.read-p{color:#000}
+  .section-wrap{display:block !important}
+  .answer-box{border:1px solid #999;background:#fff;min-height:60px;display:block}
+  a{color:#000;text-decoration:none}
 }

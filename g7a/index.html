@@ -32,6 +32,7 @@
     <p class="lead">六个单元，从四季风景写到想象世界。每课都分三步：先热身、再读懂、最后回味。点任意一课开始。</p>
   </div>
   <div id="resume"></div>
+  <nav id="unit-jump" class="unit-jump" aria-label="跳到各单元"></nav>
   <div id="toc"></div>
 </main>
 
@@ -63,6 +64,24 @@
     html+='</div></section>';
   });
   document.getElementById('toc').innerHTML=html;
+
+  /* 顶部单元快捷跳转：六个胶囊，窄屏可横向滑动 */
+  var jumpHtml=BOOK_G7A.units.map(function(u){
+    return '<a href="#unit-'+u.id+'" style="--uc:'+u.color+'">'+pad(u.id)+' '+u.title+'</a>';
+  }).join('');
+  document.getElementById('unit-jump').innerHTML=jumpHtml;
+
+  /* 点胶囊平滑滚动，并把锚点写进地址栏，不触发默认跳动 */
+  document.getElementById('unit-jump').addEventListener('click', function(ev){
+    var a=ev.target.closest('a');
+    if(!a) return;
+    ev.preventDefault();
+    var box=document.querySelector(a.getAttribute('href'));
+    if(box){
+      box.scrollIntoView({behavior:'smooth',block:'start'});
+      if(history.replaceState){history.replaceState(null,'',a.getAttribute('href'));}
+    }
+  });
 
   /* 找某个页面属于哪个单元、叫什么 */
   function locate(href){

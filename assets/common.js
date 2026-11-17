@@ -42,6 +42,19 @@ function markVisited(href){
   try{localStorage.setItem('g7a-last',href);}catch(e){}
 }
 
+/* 动态写入 meta description，已存在则更新 */
+function setMetaDesc(text){
+  if(!text) return;
+  var m=document.querySelector('meta[name="description"]');
+  if(!m){
+    m=document.createElement('meta');
+    m.setAttribute('name','description');
+    var head=document.querySelector('head');
+    if(head) head.appendChild(m);
+  }
+  m.setAttribute('content', text);
+}
+
 /* ---------- 小块渲染 ---------- */
 function noteLine(id){return '<div class="note-line"'+(id?' id="'+id+'"':'')+'></div>';}
 
@@ -73,13 +86,15 @@ function renderBlock(b){
       }).join('');
       return '<div class="compare" id="'+b.id+'"><div class="cmp-tabs" role="group" aria-label="切换对比">'+ctabs+'</div>'+cpanels+'</div>';
     case 'twodraft':
+      var tdAskId=b.id+'-ask';
+      var tdAsk=b.ask?'<p class="guess-ask" id="'+tdAskId+'">'+b.ask+'</p>':'';
       return '<div class="two-draft" id="'+b.id+'">'
-        +(b.ask?'<p class="guess-ask">'+b.ask+'</p>':'')
+        +tdAsk
         +'<div class="draft-grid">'
-        +'<div class="draft-col"><span class="draft-label">初稿</span>'
-        +'<textarea class="answer-box" data-save="'+b.save1+'" aria-label="初稿" placeholder="先把想法写下来，不用求好"></textarea></div>'
-        +'<div class="draft-col"><span class="draft-label">修改稿</span>'
-        +'<textarea class="answer-box" data-save="'+b.save2+'" aria-label="修改稿" placeholder="在初稿基础上改：加细节、改不顺的地方"></textarea></div>'
+        +'<div class="draft-col"><span class="draft-label" id="'+b.id+'-l1">初稿</span>'
+        +'<textarea class="answer-box" data-save="'+b.save1+'" aria-labelledby="'+(b.ask?tdAskId+' ':'')+b.id+'-l1" placeholder="先把想法写下来，不用求好"></textarea></div>'
+        +'<div class="draft-col"><span class="draft-label" id="'+b.id+'-l2">修改稿</span>'
+        +'<textarea class="answer-box" data-save="'+b.save2+'" aria-labelledby="'+(b.ask?tdAskId+' ':'')+b.id+'-l2" placeholder="在初稿基础上改：加细节、改不顺的地方"></textarea></div>'
         +'</div><p class="save-tip" hidden>已保存在本浏览器</p></div>';
     case 'readlist':
       var rlrows=b.items.map(function(it){
@@ -122,7 +137,7 @@ function renderBlock(b){
     case 'bigq':
       var qid='bq-'+b.save;
       return '<p class="big-q" id="'+qid+'">'+b.q+'</p>'
-        +'<textarea class="answer-box" data-save="'+b.save+'" aria-labelledby="'+qid+'" placeholder="写几句自己的想法，只有你自己看得到"></textarea>'
+        +'<textarea class="answer-box" data-save="'+b.save+'" aria-labelledby="'+qid+'" placeholder="'+placeholderFor(b.q,b.ph)+'"></textarea>'
         +'<p class="save-tip" hidden>已保存在本浏览器</p>';
     case 'choices':
       return '<div class="btn-row"'+(b.id?' id="'+b.id+'"':'')+(b.save?' data-save="'+b.save+'"':'')+'>'+b.options.map(function(o){
@@ -140,9 +155,20 @@ function renderBlock(b){
   }
 }
 
-function renderSection(sec, labClass){
+/* 按题干动作给开放题一个更贴合的提示；数据里显式给 ph 时优先用 ph */
+function placeholderFor(q, ph){
+  if(ph) return ph;
+  q=q||'';
+  if(/几个字|几个词|哪几句|摘|抄|圈出/.test(q)) return '把那几个字摘下来，再写一句你为什么选它';
+  if(/提纲|思路|分点|顺序/.test(q)) return '分几点列出来，先不用写成完整文章';
+  if(/对比|区别|不同|两边/.test(q)) return '两边各写一点，对着比';
+  if(/为什么|怎么|什么意思|读出了|哪一|说说|写下来/.test(q)) return '写清你的想法，最好能指回原文';
+  return '把想法写在这，只有你自己看得到';
+}
+
+function renderSection(sec, labClass, wrapId){
   if(!sec) return '';
-  return '<div class="section-wrap '+labClass+'">'
+  return '<div class="section-wrap '+labClass+'"'+(wrapId?' id="'+wrapId+'"':'')+'>'
     +'<h2 class="section-label">'+sec.title+'</h2>'
     +'<div class="panel">'+sec.blocks.map(renderBlock).join('')+'</div></div>';
 }
@@ -175,6 +201,12 @@ function renderLesson(){
 
   document.documentElement.lang='zh-CN';
   document.title=cur.title+' · 我的语文书房';
+  var lessonTitle=(cur.title.indexOf('《')>=0)?cur.title:'《'+cur.title+'》';
+  setMetaDesc('七年级上册'+lessonTitle+'预习复习：先热身、再读懂、最后回味，跟着原文一步步练。');
+  var inPageNav='<nav class="inpage-nav" aria-label="跳到本课各环节">'
+    +'<a href="#sec-prep" data-jump="pre">课前看一眼</a>'
+    +'<a href="#sec-read" data-jump="post">读懂</a>'
+    +'<a href="#sec-back" data-jump="post">课后想一想</a></nav>';
   var appRoot=document.createElement('div');
   appRoot.className='app-root';
   appRoot.innerHTML=headHTML()
@@ -185,9 +217,10 @@ function renderLesson(){
     +'<button type="button" class="mode-btn" data-mode="pre" aria-pressed="false">课前看一眼</button>'
     +'<button type="button" class="mode-btn" data-mode="post" aria-pressed="false">课后想一想</button>'
     +'</div>'
-    +renderSection(L.prep,'lab-prep')
-    +renderSection(L.read,'lab-read')
-    +renderSection(L.back,'lab-back')
+    +inPageNav
+    +renderSection(L.prep,'lab-prep','sec-prep')
+    +renderSection(L.read,'lab-read','sec-read')
+    +renderSection(L.back,'lab-back','sec-back')
     +pager+'</main>'
     +'<footer class="foot wrap">我的语文书房 · 课前预习 · 课后复习</footer>';
   document.body.appendChild(appRoot);
@@ -244,6 +277,8 @@ function renderExtra(){
 
   document.documentElement.lang='zh-CN';
   document.title=X.title+' · 我的语文书房';
+  var extraTitle=(X.title.indexOf('《')>=0)?X.title:'《'+X.title+'》';
+  setMetaDesc('七年级上册拓展板块'+extraTitle+'：跟着任务动手练，本地保存进度。');
   var extraRoot=document.createElement('div');
   extraRoot.className='app-root';
   extraRoot.innerHTML=extraHeadHTML()
@@ -380,6 +415,20 @@ document.addEventListener('click',function(e){
         target.focus();
       }
     }
+    return;
+  }
+
+  // 课内三段跳转：目标在当前模式隐藏时，先切到对应模式再定位
+  var jmp=node.closest('.inpage-nav a');
+  if(jmp){
+    e.preventDefault();
+    var needMode=jmp.getAttribute('data-jump');
+    if(needMode && needMode!==getMode()){
+      try{localStorage.setItem('g7a-mode',needMode);}catch(err){}
+      applyMode(needMode);
+    }
+    var target=document.querySelector(jmp.getAttribute('href'));
+    if(target){target.scrollIntoView({behavior:'smooth',block:'start'});}
     return;
   }
 
