@@ -76,13 +76,28 @@ img,svg{max-width:100%}
   border:1.5px solid var(--line);background:#fbf8ef;color:var(--ink)}
 .extra a:hover{background:#f1ecdd}
 
+/* 继续上次 */
+.resume-btn{display:flex;align-items:center;margin:18px 0 4px;padding:14px 22px;border-radius:var(--radius);
+  background:var(--gold);color:#231d05;font-weight:800;text-decoration:none;font-size:1.08rem;min-height:52px}
+.resume-btn:hover{filter:brightness(1.05)}
+.unit-last{outline:3px solid var(--gold);outline-offset:2px}
+
 /* ---------- 课文页：通用三段 ---------- */
 .lesson-stage{padding-bottom:30px}
+
+/* 课前/课后切换 */
+.mode-switch{display:inline-flex;gap:4px;background:#e6e0d1;border:1px solid var(--line);
+  border-radius:12px;padding:5px;margin:14px 0 2px;max-width:100%}
+.mode-btn{min-height:46px;padding:8px clamp(14px,4vw,24px);border-radius:8px;border:none;background:transparent;
+  font-weight:800;color:var(--muted);cursor:pointer;transition:background .15s,color .15s}
+.mode-btn[aria-pressed="true"]{background:var(--card);box-shadow:0 2px 6px rgba(0,0,0,.14)}
+.mode-btn[data-mode="pre"][aria-pressed="true"]{color:var(--prep)}
+.mode-btn[data-mode="post"][aria-pressed="true"]{color:var(--ink)}
 .section-label{display:inline-flex;align-items:center;gap:8px;font-weight:800;font-size:.95rem;margin:22px 0 10px}
 .section-label::before{content:"";width:10px;height:10px;border-radius:3px}
-.lab-prep{color:var(--prep)}.lab-prep::before{background:var(--prep)}
-.lab-read{color:var(--ink)}.lab-read::before{background:var(--ink)}
-.lab-back{color:var(--u1)}.lab-back::before{background:var(--u1)}
+.lab-prep .section-label{color:var(--prep)}.lab-prep .section-label::before{background:var(--prep)}
+.lab-read .section-label{color:var(--ink)}.lab-read .section-label::before{background:var(--ink)}
+.lab-back .section-label{color:var(--u1)}.lab-back .section-label::before{background:var(--u1)}
 
 .panel{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:20px clamp(16px,3vw,26px)}
 .panel + .panel{margin-top:14px}
@@ -109,6 +124,56 @@ img,svg{max-width:100%}
 .prose p{margin:10px 0}
 .prose .word{cursor:pointer;border-radius:6px;padding:0 3px}
 .prose .word.on{background:#efe9d8}
+
+/* 分步探究 */
+.step{border-left:4px solid var(--line);padding:6px 0 6px 18px;margin-top:20px}
+.step-title{font-size:1.1rem;font-weight:800;margin-bottom:8px}
+.step-hint{color:var(--muted);font-size:1.02rem;margin:8px 0}
+.guess-ask{font-weight:800;font-size:1.08rem;margin:16px 0 4px}
+.demo-read{background:#f1ecdd;border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-top:14px}
+.demo-read p{margin:0}
+
+/* 同屏对比 */
+.compare{margin-top:14px;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:#fbf8ef}
+.cmp-tabs{display:flex;gap:6px;padding:8px;background:#ece6d7;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.cmp-tab{min-height:46px;padding:8px 22px;border-radius:8px;border:1.5px solid var(--line);background:var(--card);
+  font-weight:800;cursor:pointer}
+.cmp-tab[aria-pressed="true"]{background:var(--u3);color:#fff;border-color:var(--u3)}
+.cmp-panel{padding:16px}
+.cmp-panel svg{display:block;width:100%;height:auto}
+.cmp-note{color:var(--muted);margin-top:10px;font-size:1rem}
+
+/* 两稿并排 */
+.two-draft{margin-top:12px}
+.draft-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.draft-col{display:flex;flex-direction:column;min-width:0}
+.draft-label{font-weight:800;margin-bottom:6px;color:var(--u3)}
+.draft-col:last-child .draft-label{color:var(--u1)}
+.draft-col .answer-box{flex:1;min-height:160px}
+
+/* 整本书篇目清单 */
+.readlist ul{margin-top:8px}
+.rl-item{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px dashed #e7e0cf;flex-wrap:wrap}
+.rl-item:last-child{border-bottom:none}
+.rl-name{font-weight:700;flex:1;min-width:140px}
+.rl-btn{min-height:42px;padding:6px 14px;border-radius:9px;border:1.5px solid var(--line);background:var(--card);
+  font-weight:700;cursor:pointer;font-size:.9rem}
+.rl-btn[data-k="read"][aria-pressed="true"]{background:var(--u1);color:#fff;border-color:var(--u1)}
+.rl-btn[data-k="mark"][aria-pressed="true"]{background:var(--gold);color:#231d05;border-color:var(--gold)}
+.rl-summary{margin-top:12px;color:var(--muted);font-weight:700}
+
+/* 听两种读法 */
+.speak-box{margin-top:14px;padding:18px;border:1px solid var(--line);border-radius:var(--radius);background:var(--card)}
+.sp-sentence{font-size:1.22rem;line-height:1.7;font-weight:700}
+.sp-em{border-radius:5px;padding:0 2px;transition:background .2s}
+.sp-em.on{background:var(--gold);color:#231d05}
+.sp-btns{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+.sp-btn{display:inline-flex;align-items:center;gap:8px;min-height:46px;padding:8px 18px;border-radius:11px;
+  border:1.5px solid var(--u3);background:var(--card);color:var(--u3);font-weight:700;cursor:pointer}
+.sp-btn:hover{background:#eaf1f8}
+.sp-btn:active{transform:scale(.97)}
+.sp-btn:nth-child(2){border-color:var(--u1);color:var(--u1)}
+.sp-btn:nth-child(2):hover{background:#eaf3ed}
 
 /* 翻转卡（字词/修辞，自愿看） */
 .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px;margin-top:12px}
@@ -171,6 +236,9 @@ img,svg{max-width:100%}
 @media (min-width:880px){
   .books{grid-template-columns:repeat(3,1fr)}
   .two-col{display:grid;grid-template-columns:1.1fr .9fr;gap:16px;align-items:start}
+}
+@media (max-width:680px){
+  .draft-grid{grid-template-columns:1fr}
 }
 @media (max-width:560px){
   .books{grid-template-columns:1fr}

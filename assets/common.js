@@ -3,11 +3,44 @@
    课文薄页面只需 <body data-lesson="l1">，由本脚本渲染并绑定交互
    ============================================================ */
 
-var BOOK = BOOK_G7A;
-var LESSONS = LESSONS_G7A;
+var BOOK = (typeof BOOK_G7A!=='undefined') ? BOOK_G7A : null;
+var LESSONS = (typeof LESSONS_G7A!=='undefined') ? LESSONS_G7A : null;
 
 function el(id){return document.getElementById(id);}
 function pad(n){return (n<10?'0':'')+n;}
+
+/* 完整教材顺序：按单元，课内先课文、再拓展，pager 与续读共用这一条 */
+function buildSequence(){
+  var seq=[];
+  if(!BOOK)return seq;
+  BOOK.units.forEach(function(u){
+    u.lessons.forEach(function(l){
+      seq.push({kind:'lesson', unit:u.id, no:l.no, title:l.title, href:'lesson-'+pad(l.no)+'.html'});
+    });
+    u.extras.forEach(function(x){
+      seq.push({kind:'extra', unit:u.id, title:x.label, href:x.href});
+    });
+  });
+  return seq;
+}
+
+/* 通用 pager：上一项 / 目录 / 下一项，都写具体标题，含拓展 */
+function renderPager(currentHref){
+  var seq=buildSequence();
+  var i=seq.findIndex(function(s){return s.href===currentHref;});
+  var prev=i>0?seq[i-1]:null, next=i>=0&&i<seq.length-1?seq[i+1]:null;
+  function side(item,dir){
+    if(!item)return '<span class="pager-placeholder" aria-hidden="true"></span>';
+    return '<a href="'+item.href+'">'+(dir==='prev'?'← ':'')+item.title+(dir==='next'?' →':'')+'</a>';
+  }
+  return '<nav class="pager" aria-label="上一项或下一项">'
+    +side(prev,'prev')+'<a href="index.html">七上目录</a>'+side(next,'next')+'</nav>';
+}
+
+/* 记录最近一次访问的页面，供目录“继续上次”和定位单元用 */
+function markVisited(href){
+  try{localStorage.setItem('g7a-last',href);}catch(e){}
+}
 
 /* ---------- 小块渲染 ---------- */
 function noteLine(id){return '<div class="note-line"'+(id?' id="'+id+'"':'')+'></div>';}
@@ -18,34 +51,81 @@ function renderButton(b){
   if(b.hide) attr+=' data-hide="'+b.hide+'"';
   if(b.reveal) attr+=' data-reveal="'+b.reveal+'"';
   if(b.toggle) attr+=' data-toggle="'+b.toggle+'"';
+  if(b.post) attr+=' data-post="1"';
+  if(b.bring) attr+=' data-bring="'+b.bring+'" data-bring-to="'+(b.bringTo||'')+'"';
   var cls='btn '+(b.kind||'');
   return '<button class="'+cls.trim()+'"'+attr+'>'+b.label+'</button>';
 }
 
 function renderBlock(b){
   switch(b.t){
+    case 'step':
+      return '<section class="step"'+(b.id?' id="'+b.id+'"':'')+(b.hidden?' hidden':'')+'>'
+        +(b.title?'<h3 class="step-title">'+b.title+'</h3>':'')
+        +b.blocks.map(renderBlock).join('')+'</section>';
+    case 'compare':
+      var ctabs=b.options.map(function(o,i){
+        return '<button type="button" class="cmp-tab" data-cmp="'+b.id+'" data-v="'+o.v+'" aria-pressed="'+(i===0)+'">'+o.label+'</button>';
+      }).join('');
+      var cpanels=b.options.map(function(o,i){
+        return '<div class="cmp-panel" id="'+b.id+'-'+o.v+'"'+(i?' hidden':'')+'>'+(o.svg||'')
+          +(o.note?'<p class="cmp-note">'+o.note+'</p>':'')+'</div>';
+      }).join('');
+      return '<div class="compare" id="'+b.id+'"><div class="cmp-tabs" role="group" aria-label="切换对比">'+ctabs+'</div>'+cpanels+'</div>';
+    case 'twodraft':
+      return '<div class="two-draft" id="'+b.id+'">'
+        +(b.ask?'<p class="guess-ask">'+b.ask+'</p>':'')
+        +'<div class="draft-grid">'
+        +'<div class="draft-col"><span class="draft-label">初稿</span>'
+        +'<textarea class="answer-box" data-save="'+b.save1+'" aria-label="初稿" placeholder="先把想法写下来，不用求好"></textarea></div>'
+        +'<div class="draft-col"><span class="draft-label">修改稿</span>'
+        +'<textarea class="answer-box" data-save="'+b.save2+'" aria-label="修改稿" placeholder="在初稿基础上改：加细节、改不顺的地方"></textarea></div>'
+        +'</div><p class="save-tip" hidden>已保存在本浏览器</p></div>';
+    case 'readlist':
+      var rlrows=b.items.map(function(it){
+        return '<li class="rl-item"><span class="rl-name">'+it.label+'</span>'
+          +'<button type="button" class="rl-btn" data-rl="'+b.id+'" data-v="'+it.v+'" data-k="read" aria-pressed="false">已读</button>'
+          +'<button type="button" class="rl-btn" data-rl="'+b.id+'" data-v="'+it.v+'" data-k="mark" aria-pressed="false">书签</button></li>';
+      }).join('');
+      return '<div class="readlist" id="'+b.id+'" data-save="'+b.id+'"><ul>'+rlrows+'</ul>'
+        +'<p class="rl-summary" id="'+b.id+'-sum"></p></div>';
+    case 'speak':
+      var spHtml=b.sentence;
+      var spEms=[];
+      b.reads.forEach(function(r){if(spEms.indexOf(r.em)<0)spEms.push(r.em);});
+      spEms.forEach(function(em){
+        spHtml=spHtml.split(em).join('<span class="sp-em" data-em="'+em+'">'+em+'</span>');
+      });
+      var spIcon='<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4z" fill="currentColor"/><path d="M16 8.5a4 4 0 010 7" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>';
+      var spBtns=b.reads.map(function(r){
+        return '<button type="button" class="sp-btn" data-sp="'+b.id+'" data-em="'+r.em+'">'+spIcon+'<span>'+r.label+'</span></button>';
+      }).join('');
+      return '<div class="speak-box" id="'+b.id+'" data-sentence="'+b.sentence+'">'
+        +'<p class="sp-sentence">'+spHtml+'</p>'
+        +'<div class="sp-btns">'+spBtns+'</div></div>';
     case 'html':
       return '<div class="prose">'+b.h+'</div>';
     case 'scene':
       return '<div class="scene" id="'+(b.id||'')+'">'+b.svg
         +(b.cap?'<p class="scene-cap">'+b.cap+'</p>':'')+'</div>';
     case 'verse':
-      return '<div class="verse">'+b.lines.join('')+'</div>'+noteLine(b.noteId);
+      return '<div class="verse">'+b.lines.join('')+noteLine(b.noteId)+'</div>';
     case 'prose':
-      return '<div class="prose">'+b.paras.map(function(p){return '<p>'+p+'</p>';}).join('')+'</div>'
-        +(b.noteId?noteLine(b.noteId):'');
+      return '<div class="prose">'+b.paras.map(function(p){return '<p>'+p+'</p>';}).join('')
+        +(b.noteId?noteLine(b.noteId):'')+'</div>';
     case 'cards':
       return '<div class="cards">'+b.items.map(function(i){
-        return '<div class="flip"><button type="button">'
-          +'<span class="face front">'+i.front+'<span class="hint-tap">点一下看解释</span></span>'
-          +'<span class="face back">'+i.back+'</span></button></div>';
+        return '<div class="flip"><button type="button" aria-pressed="false">'
+          +'<span class="face front">'+i.front+'<span class="hint-tap" aria-hidden="true">点一下看解释</span></span>'
+          +'<span class="face back" aria-hidden="true">'+i.back+'</span></button></div>';
       }).join('')+'</div>';
     case 'bigq':
-      return '<p class="big-q">'+b.q+'</p>'
-        +'<textarea class="answer-box" data-save="'+b.save+'" placeholder="写几句自己的想法，只有你自己看得到"></textarea>'
-        +'<p class="save-tip">自动保存在这台设备上，随时能改</p>';
+      var qid='bq-'+b.save;
+      return '<p class="big-q" id="'+qid+'">'+b.q+'</p>'
+        +'<textarea class="answer-box" data-save="'+b.save+'" aria-labelledby="'+qid+'" placeholder="写几句自己的想法，只有你自己看得到"></textarea>'
+        +'<p class="save-tip" hidden>已保存在本浏览器</p>';
     case 'choices':
-      return '<div class="btn-row" id="'+(b.id||'')+'">'+b.options.map(function(o){
+      return '<div class="btn-row"'+(b.id?' id="'+b.id+'"':'')+(b.save?' data-save="'+b.save+'"':'')+'>'+b.options.map(function(o){
         return '<button type="button" class="choice" data-v="'+o.v+'" aria-pressed="false">'+o.label+'</button>';
       }).join('')+'</div>';
     case 'timeline':
@@ -62,8 +142,9 @@ function renderBlock(b){
 
 function renderSection(sec, labClass){
   if(!sec) return '';
-  return '<h2 class="section-label '+labClass+'">'+sec.title+'</h2>'
-    +'<div class="panel">'+sec.blocks.map(renderBlock).join('')+'</div>';
+  return '<div class="section-wrap '+labClass+'">'
+    +'<h2 class="section-label">'+sec.title+'</h2>'
+    +'<div class="panel">'+sec.blocks.map(renderBlock).join('')+'</div></div>';
 }
 
 /* ---------- 页面骨架 ---------- */
@@ -80,36 +161,61 @@ function headHTML(){
 
 function renderLesson(){
   var id=document.body.getAttribute('data-lesson');
+  if(typeof LESSONS==='undefined'||!LESSONS){failScreen();return;}
   var L=LESSONS[id];
   if(!L){document.body.innerHTML='<p class="wrap" style="padding:40px">这一课还在准备中。</p>';return;}
 
   var all=[];
   BOOK.units.forEach(function(u){u.lessons.forEach(function(l){all.push(l);});});
   var idx=all.findIndex(function(l){return l.id===id;});
-  var prev=all[idx-1], next=all[idx+1];
-
-  var pager='<nav class="pager">'
-    +(prev?'<a href="lesson-'+pad(prev.no)+'.html">← 第'+prev.no+'课 '+prev.title+'</a>'
-          :'<a href="index.html">← 回目录</a>')
-    +'<a href="index.html">七上目录</a>'
-    +(next?'<a href="lesson-'+pad(next.no)+'.html">第'+next.no+'课 '+next.title+' →</a>'
-          :'<span></span>')+'</nav>';
-
   var cur=all[idx];
+  var curHref='lesson-'+pad(cur.no)+'.html';
+  var pager=renderPager(curHref);
+  markVisited(curHref);
+
   document.documentElement.lang='zh-CN';
   document.title=cur.title+' · 我的语文书房';
-  document.body.innerHTML=headHTML()
+  var appRoot=document.createElement('div');
+  appRoot.className='app-root';
+  appRoot.innerHTML=headHTML()
     +'<main id="main" class="wrap lesson-stage">'
     +'<div class="page-head"><div class="eyebrow">'+(L.kind||cur.type||'课文')+' · '+ (cur.author||L.author||'')+'</div>'
     +'<h1>'+cur.title+'</h1>'+(L.lead?'<p class="lead">'+L.lead+'</p>':'')+'</div>'
+    +'<div class="mode-switch" role="group" aria-label="选择课前或课后">'
+    +'<button type="button" class="mode-btn" data-mode="pre" aria-pressed="false">课前看一眼</button>'
+    +'<button type="button" class="mode-btn" data-mode="post" aria-pressed="false">课后想一想</button>'
+    +'</div>'
     +renderSection(L.prep,'lab-prep')
     +renderSection(L.read,'lab-read')
     +renderSection(L.back,'lab-back')
     +pager+'</main>'
     +'<footer class="foot wrap">我的语文书房 · 课前预习 · 课后复习</footer>';
+  document.body.appendChild(appRoot);
 
   restoreSaved();
+  enhanceA11y();
+  applyMode(getMode());
   window.scrollTo(0,0);
+}
+
+/* ---------- 课前 / 课后模式 ---------- */
+function getMode(){
+  var m; try{m=localStorage.getItem('g7a-mode');}catch(e){}
+  return (m==='post'||m==='pre')?m:'pre';
+}
+function applyMode(mode){
+  var pre=document.querySelector('.lab-prep');
+  var post=document.querySelectorAll('.lab-read,.lab-back');
+  if(mode==='post'){
+    if(pre)pre.hidden=true;
+    post.forEach(function(s){s.hidden=false;});
+  }else{
+    if(pre)pre.hidden=false;
+    post.forEach(function(s){s.hidden=true;});
+  }
+  document.querySelectorAll('.mode-btn').forEach(function(b){
+    b.setAttribute('aria-pressed', b.getAttribute('data-mode')===mode?'true':'false');
+  });
 }
 
 /* ---------- 拓展板块（实践/写作/专题/整本书/课外诗词） ---------- */
@@ -126,24 +232,30 @@ function extraHeadHTML(){
 
 function renderExtra(){
   var key=document.body.getAttribute('data-extra');
+  if(typeof EXTRAS_G7A==='undefined'||!EXTRAS_G7A){failScreen();return;}
   var X=EXTRAS_G7A[key];
   if(!X){document.body.innerHTML='<p class="wrap" style="padding:40px">这个板块还在准备中。</p>';return;}
 
   var secs=(X.sections||[]).map(function(s){
     return renderSection({title:s.title, blocks:s.blocks}, s.lab||'lab-prep');
   }).join('');
-  var back='<nav class="pager"><a href="index.html">← 回七上目录</a><span></span><span></span></nav>';
+  var back=renderPager(key+'.html');
+  markVisited(key+'.html');
 
   document.documentElement.lang='zh-CN';
   document.title=X.title+' · 我的语文书房';
-  document.body.innerHTML=extraHeadHTML()
+  var extraRoot=document.createElement('div');
+  extraRoot.className='app-root';
+  extraRoot.innerHTML=extraHeadHTML()
     +'<main id="main" class="wrap lesson-stage">'
     +'<div class="page-head"><div class="eyebrow">'+(X.eyebrow||'拓展板块')+'</div>'
     +'<h1>'+X.title+'</h1>'+(X.lead?'<p class="lead">'+X.lead+'</p>':'')+'</div>'
     +secs+back+'</main>'
     +'<footer class="foot wrap">我的语文书房 · 课前预习 · 课后复习</footer>';
+  document.body.appendChild(extraRoot);
 
   restoreSaved();
+  enhanceA11y();
   window.scrollTo(0,0);
 }
 
@@ -153,12 +265,84 @@ function restoreSaved(){
     var k=tb.getAttribute('data-save');
     try{tb.value=localStorage.getItem(k)||'';}catch(e){}
   });
+  document.querySelectorAll('.btn-row[data-save]').forEach(function(g){
+    var v; try{v=localStorage.getItem(g.getAttribute('data-save'));}catch(e){}
+    if(v){g.querySelectorAll('.choice').forEach(function(c){
+      c.setAttribute('aria-pressed', c.getAttribute('data-v')===v?'true':'false');
+    });}
+  });
+  document.querySelectorAll('.readlist').forEach(function(box){
+    var rlId=box.getAttribute('id');
+    ['read','mark'].forEach(function(k){
+      getRLArr(rlId,k).forEach(function(v){
+        var b=box.querySelector('.rl-btn[data-k="'+k+'"][data-v="'+v+'"]');
+        if(b)b.setAttribute('aria-pressed','true');
+      });
+    });
+    updateReadlistSummary(rlId);
+  });
+}
+
+/* 渲染后给可点词补键盘可达性 */
+function enhanceA11y(){
+  document.querySelectorAll('.word').forEach(function(w){
+    w.setAttribute('tabindex','0');
+    w.setAttribute('role','button');
+    if(!w.getAttribute('aria-label')){w.setAttribute('aria-label', w.textContent);}
+  });
+}
+
+/* 整本书篇目清单：已读 / 书签 状态 */
+function getRLArr(rlId,k){
+  try{return JSON.parse(localStorage.getItem(rlId+'-'+k)||'[]');}catch(e){return [];}
+}
+function updateReadlistSummary(rlId){
+  var total=document.querySelectorAll('#'+rlId+' .rl-item').length;
+  var reads=getRLArr(rlId,'read').length;
+  var marks=getRLArr(rlId,'mark').length;
+  var sum=document.getElementById(rlId+'-sum');
+  if(sum){sum.textContent='已读 '+reads+' / '+total+' 篇'+(marks?'，书签 '+marks+' 篇':'');}
+}
+
+/* 听同一句两种读法：浏览器自带朗读，目标词放慢 + 视觉高亮 */
+function speakSentence(box, btn){
+  if(!('speechSynthesis' in window)){btn.textContent='这个浏览器不支持朗读';return;}
+  var synth=window.speechSynthesis;
+  synth.cancel();
+  var sentence=box.getAttribute('data-sentence');
+  var em=btn.getAttribute('data-em');
+  box.querySelectorAll('.sp-em').forEach(function(s){
+    s.classList.toggle('on', s.getAttribute('data-em')===em);
+  });
+  var voice=synth.getVoices().filter(function(v){return v.lang==='zh-CN';})[0];
+  var esc=em.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+  var tokens=sentence.split(new RegExp('('+esc+')','g'));
+  tokens.forEach(function(tok){
+    if(!tok)return;
+    var ut=new SpeechSynthesisUtterance(tok);
+    ut.lang='zh-CN';
+    if(voice)ut.voice=voice;
+    if(tok===em)ut.rate=0.72;
+    synth.speak(ut);
+  });
 }
 
 /* ---------- 统一交互（事件委托） ---------- */
 document.addEventListener('input',function(e){
   var tb=e.target.closest('.answer-box[data-save]');
-  if(tb){try{localStorage.setItem(tb.getAttribute('data-save'),tb.value);}catch(err){}}
+  if(tb){
+    var ok=false;
+    try{localStorage.setItem(tb.getAttribute('data-save'),tb.value);ok=true;}catch(err){}
+    var tipHost=tb.closest('.two-draft')||tb.parentElement;
+    var tip=tipHost.querySelector('.save-tip');
+    if(tip){tip.hidden=!ok;}
+  }
+});
+
+document.addEventListener('keydown',function(e){
+  if(e.key!=='Enter'&&e.key!==' '&&e.key!=='Spacebar')return;
+  var w=e.target.closest('.word');
+  if(w){e.preventDefault();w.click();}
 });
 
 document.addEventListener('click',function(e){
@@ -171,15 +355,89 @@ document.addEventListener('click',function(e){
     if(host){
       host.querySelectorAll('.word').forEach(function(x){if(x!==w)x.classList.remove('on');});
       w.classList.toggle('on');
-      var note=host.parentElement.querySelector('.note-line');
+      var note=host.querySelector('.note-line');
       if(note){ note.innerHTML = w.classList.contains('on') ? (w.getAttribute('data-note')||'') : ''; }
     }
     return;
   }
 
+  // 把上一页的观察记录带进当前文本框
+  var bringBtn=node.closest('[data-bring]');
+  if(bringBtn){
+    var srcKey=bringBtn.getAttribute('data-bring');
+    var toKey=bringBtn.getAttribute('data-bring-to');
+    var val; try{val=localStorage.getItem(srcKey);}catch(err){}
+    var target=document.querySelector('.answer-box[data-save="'+toKey+'"]');
+    if(target){
+      if(!val){
+        bringBtn.textContent='还没有观察记录，先去上一页记一笔';
+      }else{
+        target.value=val;
+        try{localStorage.setItem(toKey,val);}catch(err){}
+        var tipHost=target.closest('.two-draft')||target.parentElement;
+        var tip=tipHost.querySelector('.save-tip');
+        if(tip)tip.hidden=false;
+        target.focus();
+      }
+    }
+    return;
+  }
+
+  // 课前/课后模式切换
+  var mb=node.closest('.mode-btn');
+  if(mb){
+    var mode=mb.getAttribute('data-mode');
+    try{localStorage.setItem('g7a-mode',mode);}catch(err){}
+    applyMode(mode);
+    window.scrollTo(0,0);
+    return;
+  }
+
+  // 同屏对比切换
+  var ctab=node.closest('.cmp-tab');
+  if(ctab){
+    var cid=ctab.getAttribute('data-cmp');
+    document.querySelectorAll('.cmp-tab[data-cmp="'+cid+'"]').forEach(function(t){t.setAttribute('aria-pressed','false');});
+    ctab.setAttribute('aria-pressed','true');
+    document.querySelectorAll('#'+cid+' .cmp-panel').forEach(function(p){p.hidden=true;});
+    var cp=document.getElementById(cid+'-'+ctab.getAttribute('data-v'));
+    if(cp)cp.hidden=false;
+    return;
+  }
+
   // 翻转卡
   var flip=node.closest('.flip button');
-  if(flip){flip.classList.toggle('flipped');return;}
+  if(flip){
+    var flipped=flip.classList.toggle('flipped');
+    flip.setAttribute('aria-pressed', flipped?'true':'false');
+    var bk=flip.querySelector('.face.back');
+    if(bk){bk.setAttribute('aria-hidden', flipped?'false':'true');}
+    return;
+  }
+
+  // 整本书篇目：已读 / 书签
+  var rlb=node.closest('.rl-btn');
+  if(rlb){
+    var rlId=rlb.getAttribute('data-rl');
+    var rv=rlb.getAttribute('data-v');
+    var rk=rlb.getAttribute('data-k');
+    var arr=getRLArr(rlId,rk);
+    var ri=arr.indexOf(rv);
+    var ron;
+    if(ri>=0){arr.splice(ri,1);ron=false;}else{arr.push(rv);ron=true;}
+    try{localStorage.setItem(rlId+'-'+rk,JSON.stringify(arr));}catch(err){}
+    rlb.setAttribute('aria-pressed',ron?'true':'false');
+    updateReadlistSummary(rlId);
+    return;
+  }
+
+  // 听两种读法
+  var spb=node.closest('.sp-btn');
+  if(spb){
+    var spbox=document.getElementById(spb.getAttribute('data-sp'));
+    if(spbox)speakSentence(spbox,spb);
+    return;
+  }
 
   // 猜想按钮（同组互斥）
   var ch=node.closest('.choice');
@@ -188,12 +446,18 @@ document.addEventListener('click',function(e){
     var on=ch.getAttribute('aria-pressed')==='true';
     group.querySelectorAll('.choice').forEach(function(c){c.setAttribute('aria-pressed','false');});
     if(!on){ch.setAttribute('aria-pressed','true');}
+    var sk=group.getAttribute('data-save');
+    if(sk){try{localStorage.setItem(sk, on?'':ch.getAttribute('data-v'));}catch(err){}}
     return;
   }
 
   // 通用显示/隐藏/揭示/切换
-  var act=node.closest('[data-show],[data-hide],[data-reveal],[data-toggle]');
+  var act=node.closest('[data-show],[data-hide],[data-reveal],[data-toggle],[data-post]');
   if(act){
+    if(act.hasAttribute('data-post')){
+      try{localStorage.setItem('g7a-mode','post');}catch(err){}
+      applyMode('post');
+    }
     if(act.getAttribute('data-show')){
       document.querySelectorAll(act.getAttribute('data-show')).forEach(function(x){x.hidden=false;});
     }
@@ -212,5 +476,18 @@ document.addEventListener('click',function(e){
   }
 });
 
-if(document.body.getAttribute('data-lesson')){renderLesson();}
-else if(document.body.getAttribute('data-extra')){renderExtra();}
+function failScreen(){
+  document.documentElement.lang='zh-CN';
+  document.body.innerHTML='<main class="wrap" style="padding:60px 20px">'
+    +'<h1 style="font-family:songti sc,serif">这一页没读出来</h1>'
+    +'<p style="margin-top:12px;color:var(--muted)">多半是网络断了一下，或者浏览器缓存出了问题。先刷新试试，还不行就重新打开这个页面。</p>'
+    +'<p style="margin-top:18px"><a class="btn solid" href="index.html">回七上目录</a></p></main>';
+}
+
+function safeStart(){
+  try{
+    if(document.body.getAttribute('data-lesson')){renderLesson();}
+    else if(document.body.getAttribute('data-extra')){renderExtra();}
+  }catch(err){failScreen();}
+}
+safeStart();

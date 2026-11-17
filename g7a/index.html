@@ -31,6 +31,7 @@
     <h1>七年级上册</h1>
     <p class="lead">六个单元，从四季风景写到想象世界。每课都分三步：先热身、再读懂、最后回味。点任意一课开始。</p>
   </div>
+  <div id="resume"></div>
   <div id="toc"></div>
 </main>
 
@@ -40,15 +41,16 @@
 <script>
 (function(){
   function pad(n){return (n<10?'0':'')+n;}
+  function hrefOfLesson(l){return 'lesson-'+pad(l.no)+'.html';}
   var html='';
   BOOK_G7A.units.forEach(function(u){
-    html+='<section class="unit" style="--uc:'+u.color+'">'
+    html+='<section class="unit" id="unit-'+u.id+'" style="--uc:'+u.color+'">'
       +'<div class="unit-head" style="background:'+u.color+'">'
       +'<span class="no">'+pad(u.id)+'</span>'
       +'<span class="utitle">'+u.title+'</span>'
       +'<span class="utheme">'+u.theme+'</span></div><div class="lessons">';
     u.lessons.forEach(function(l){
-      html+='<a class="lesson-item" href="lesson-'+pad(l.no)+'.html">'
+      html+='<a class="lesson-item" href="'+hrefOfLesson(l)+'">'
         +'<span class="ln">'+l.no+'</span>'
         +'<span class="lt">'+l.title+(l.star?'<span class="lstar">（自读）</span>':'')+'</span>'
         +'<span class="tag-type" style="background:'+u.color+'1f;color:'+u.color+'">'+l.type+'</span>'
@@ -61,6 +63,34 @@
     html+='</div></section>';
   });
   document.getElementById('toc').innerHTML=html;
+
+  /* 找某个页面属于哪个单元、叫什么 */
+  function locate(href){
+    var found=null;
+    BOOK_G7A.units.forEach(function(u){
+      var l=u.lessons.filter(function(x){return hrefOfLesson(x)===href;})[0];
+      var ex=u.extras.filter(function(x){return x.href===href;})[0];
+      if(l)found={unit:u.id,title:l.title};
+      else if(ex)found={unit:u.id,title:ex.label};
+    });
+    return found;
+  }
+
+  var last;
+  try{last=localStorage.getItem('g7a-last');}catch(e){}
+  if(last){
+    var info=locate(last);
+    document.getElementById('resume').innerHTML=
+      '<a class="resume-btn" href="'+last+'">继续上次：'+(info?info.title:last)+' →</a>';
+    if(info&&!location.hash){
+      var box=document.getElementById('unit-'+info.unit);
+      if(box){box.classList.add('unit-last');box.scrollIntoView({block:'start'});}
+    }
+  }
+  if(location.hash){
+    var h=document.querySelector(location.hash);
+    if(h){h.scrollIntoView();}
+  }
 })();
 </script>
 </body>
