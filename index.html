@@ -92,8 +92,13 @@
   var last,title;
   try{last=localStorage.getItem('g7a-last');title=localStorage.getItem('g7a-last-title');}catch(e){}
   if(last){
+    var label=title;
+    if(!label){
+      var lm=String(last).match(/lesson-(\d+)\.html/);
+      label=lm?('第'+parseInt(lm[1],10)+'课'):'上次的课文';
+    }
     document.getElementById('home-resume').innerHTML=
-      '<a class="resume-btn" href="g7a/'+last+'">继续上次：'+(title||last)+' →</a>';
+      '<a class="resume-btn" href="g7a/'+last+'">继续上次：'+label+' →</a>';
   }
 })();
 </script>
