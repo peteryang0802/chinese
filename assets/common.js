@@ -95,7 +95,12 @@ function renderBlock(b){
         +'<textarea class="answer-box" data-save="'+b.save1+'" aria-labelledby="'+(b.ask?tdAskId+' ':'')+b.id+'-l1" placeholder="先把想法写下来，不用求好"></textarea></div>'
         +'<div class="draft-col"><span class="draft-label" id="'+b.id+'-l2">修改稿</span>'
         +'<textarea class="answer-box" data-save="'+b.save2+'" aria-labelledby="'+(b.ask?tdAskId+' ':'')+b.id+'-l2" placeholder="在初稿基础上改：加细节、改不顺的地方"></textarea></div>'
-        +'</div><p class="save-tip" hidden>已保存在本浏览器</p></div>';
+        +'</div>'
+        +'<div class="draft-tools">'
+        +'<button type="button" class="btn ghost" data-draft-copy="'+b.id+'">把初稿复制到修改稿</button>'
+        +'<button type="button" class="btn ghost" data-draft-undo="'+b.id+'" hidden>撤回复制</button>'
+        +'</div>'
+        +'<p class="save-tip" hidden>已保存在本浏览器</p></div>';
     case 'readlist':
       var rlrows=b.items.map(function(it){
         return '<li class="rl-item"><span class="rl-name">'+it.label+'</span>'
@@ -124,7 +129,7 @@ function renderBlock(b){
       return '<div class="scene" id="'+(b.id||'')+'">'+b.svg
         +(b.cap?'<p class="scene-cap">'+b.cap+'</p>':'')+'</div>';
     case 'verse':
-      return '<div class="verse">'+b.lines.join('')+noteLine(b.noteId)+'</div>';
+      return '<div class="verse">'+b.lines.map(function(l){return '<p class="verse-line">'+l+'</p>';}).join('')+noteLine(b.noteId)+'</div>';
     case 'prose':
       return '<div class="prose">'+b.paras.map(function(p){return '<p>'+p+'</p>';}).join('')
         +(b.noteId?noteLine(b.noteId):'')+'</div>';
@@ -198,25 +203,22 @@ function renderLesson(){
   var curHref='lesson-'+pad(cur.no)+'.html';
   var pager=renderPager(curHref);
   markVisited(curHref);
+  try{localStorage.setItem('g7a-last-title',cur.title);}catch(e){}
 
   document.documentElement.lang='zh-CN';
   document.title=cur.title+' · 我的语文书房';
   var lessonTitle=(cur.title.indexOf('《')>=0)?cur.title:'《'+cur.title+'》';
   setMetaDesc('七年级上册'+lessonTitle+'预习复习：先热身、再读懂、最后回味，跟着原文一步步练。');
-  var inPageNav='<nav class="inpage-nav" aria-label="跳到本课各环节">'
-    +'<a href="#sec-prep" data-jump="pre">课前看一眼</a>'
-    +'<a href="#sec-read" data-jump="post">读懂</a>'
-    +'<a href="#sec-back" data-jump="post">课后想一想</a></nav>';
+  var inPageNav='<nav class="inpage-nav" aria-label="本课环节">'
+    +'<a href="#sec-prep" data-stage="pre" data-target="sec-prep">预习</a>'
+    +'<a href="#sec-read" data-stage="post" data-target="sec-read">读课文</a>'
+    +'<a href="#sec-back" data-stage="post" data-target="sec-back">课后</a></nav>';
   var appRoot=document.createElement('div');
   appRoot.className='app-root';
   appRoot.innerHTML=headHTML()
     +'<main id="main" class="wrap lesson-stage">'
     +'<div class="page-head"><div class="eyebrow">'+(L.kind||cur.type||'课文')+' · '+ (cur.author||L.author||'')+'</div>'
     +'<h1>'+cur.title+'</h1>'+(L.lead?'<p class="lead">'+L.lead+'</p>':'')+'</div>'
-    +'<div class="mode-switch" role="group" aria-label="选择课前或课后">'
-    +'<button type="button" class="mode-btn" data-mode="pre" aria-pressed="false">课前看一眼</button>'
-    +'<button type="button" class="mode-btn" data-mode="post" aria-pressed="false">课后想一想</button>'
-    +'</div>'
     +inPageNav
     +renderSection(L.prep,'lab-prep','sec-prep')
     +renderSection(L.read,'lab-read','sec-read')
@@ -227,8 +229,35 @@ function renderLesson(){
 
   restoreSaved();
   enhanceA11y();
+  var hadOpenSteps=restoreStepState();
+  fillGuessRecall();
+  var hashStage=stageFromHash();
+  if(hashStage){try{localStorage.setItem('g7a-mode',hashStage.mode);}catch(e){}}
   applyMode(getMode());
-  window.scrollTo(0,0);
+  if(hashStage){
+    var hashTarget=document.getElementById(hashStage.id);
+    if(hashTarget){hashTarget.scrollIntoView({block:'start'});}
+    setActiveStage(hashStage.id);
+  }else if(hadOpenSteps){
+    var openSteps=document.querySelectorAll('.step:not([hidden])');
+    var lastOpen=openSteps[openSteps.length-1];
+    if(lastOpen){lastOpen.scrollIntoView({block:'start'});}
+    setActiveStage(getMode()==='pre'?'sec-prep':'sec-read');
+  }else{
+    window.scrollTo(0,0);
+    setActiveStage(getMode()==='pre'?'sec-prep':'sec-read');
+  }
+}
+
+/* 深链：URL 里的 #sec-xx 优先于本地记住的模式 */
+function stageFromHash(){
+  var map={'#sec-prep':{mode:'pre',id:'sec-prep'},'#sec-read':{mode:'post',id:'sec-read'},'#sec-back':{mode:'post',id:'sec-back'}};
+  return map[location.hash||'']||null;
+}
+function setActiveStage(targetId){
+  document.querySelectorAll('.inpage-nav a').forEach(function(a){
+    a.setAttribute('aria-current',a.getAttribute('data-target')===targetId?'true':'false');
+  });
 }
 
 /* ---------- 课前 / 课后模式 ---------- */
@@ -246,9 +275,6 @@ function applyMode(mode){
     if(pre)pre.hidden=false;
     post.forEach(function(s){s.hidden=true;});
   }
-  document.querySelectorAll('.mode-btn').forEach(function(b){
-    b.setAttribute('aria-pressed', b.getAttribute('data-mode')===mode?'true':'false');
-  });
 }
 
 /* ---------- 拓展板块（实践/写作/专题/整本书/课外诗词） ---------- */
@@ -274,6 +300,7 @@ function renderExtra(){
   }).join('');
   var back=renderPager(key+'.html');
   markVisited(key+'.html');
+  try{localStorage.setItem('g7a-last-title',X.title);}catch(e){}
 
   document.documentElement.lang='zh-CN';
   document.title=X.title+' · 我的语文书房';
@@ -318,13 +345,145 @@ function restoreSaved(){
   });
 }
 
-/* 渲染后给可点词补键盘可达性 */
+/* 渲染后给可点词补键盘可达性与展开状态关联 */
 function enhanceA11y(){
   document.querySelectorAll('.word').forEach(function(w){
     w.setAttribute('tabindex','0');
     w.setAttribute('role','button');
     if(!w.getAttribute('aria-label')){w.setAttribute('aria-label', w.textContent);}
+    var host=w.closest('.verse,.prose');
+    var note=host?host.querySelector('.note-line'):null;
+    if(note){
+      if(!note.id){note.id='note-'+Math.random().toString(36).slice(2,10);}
+      w.setAttribute('aria-controls',note.id);
+      w.setAttribute('aria-expanded',w.classList.contains('on')?'true':'false');
+    }
   });
+}
+
+/* ---------- 课内步骤展开状态持久化（刷新不丢） ---------- */
+function stepStorageKey(){
+  var lid=document.body.getAttribute('data-lesson');
+  return lid?('g7a-step-'+lid):null;
+}
+function saveStepState(){
+  var key=stepStorageKey();
+  if(!key)return;
+  var open=[];
+  document.querySelectorAll('.step[id]').forEach(function(s){ if(!s.hidden)open.push(s.id); });
+  try{localStorage.setItem(key,JSON.stringify(open));}catch(e){}
+}
+function restoreStepState(){
+  var key=stepStorageKey();
+  if(!key)return false;
+  var raw=localStorage.getItem(key);
+  if(raw===null)return false; // 从没存过，保留 data.js 里的默认显隐
+  var open=[];
+  try{open=JSON.parse(raw);}catch(e){return false;}
+  document.querySelectorAll('.step[id]').forEach(function(s){
+    s.hidden=open.indexOf(s.id)<0;
+  });
+  return open.length>0;
+}
+/* 展开新步骤后滚入视野，焦点落到该步骤标题 */
+function bringStepIntoFocus(target){
+  if(!target)return;
+  target.scrollIntoView({behavior:'smooth',block:'start'});
+  var heading=target.querySelector('.step-title')||target;
+  if(heading===target&&!target.hasAttribute('tabindex'))target.setAttribute('tabindex','-1');
+  if(heading!==target&&!heading.hasAttribute('tabindex'))heading.setAttribute('tabindex','-1');
+  setTimeout(function(){ try{heading.focus({preventScroll:true});}catch(e){} },180);
+}
+/* 《狼》复盘：把第一步的猜想贴在当前证据旁，允许修正 */
+function fillGuessRecall(){
+  var slot=document.getElementById('l20-guess-recall');
+  if(!slot)return;
+  var v;try{v=localStorage.getItem('l20-guess');}catch(e){}
+  var labels={gone:'真走了，不用管',trap:'可能有埋伏',unsure:'证据还不够，先不下结论'};
+  slot.textContent=v?('你刚才猜：'+(labels[v]||v)+'。下面有新证据，可以改主意。')
+    :'你第一步还没选，先看下面的线索，回头再选也来得及。';
+}
+
+/* ---------- 观察记录独立参考区（不覆盖提纲） ---------- */
+function escapeHtml(s){
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+function openReference(btn,srcKey,toKey){
+  var val;try{val=localStorage.getItem(srcKey);}catch(e){}
+  if(!val){
+    var old=btn.textContent;
+    btn.textContent='还没有观察记录，先去上一页记一笔';
+    setTimeout(function(){btn.textContent=old;},2200);
+    return;
+  }
+  var panel=document.getElementById(toKey+'-ref');
+  if(!panel){appendReferenceToTarget(toKey,val);return;}
+  panel.innerHTML=
+    '<h4 class="ref-title">上次的观察记录（参考，不会动你的提纲）</h4>'
+    +'<div class="ref-content">'+escapeHtml(val)+'</div>'
+    +'<p class="ref-status" id="'+toKey+'-ref-status"></p>'
+    +'<div class="ref-actions">'
+    +'<button type="button" class="btn solid" data-ref-append="'+toKey+'">追加到提纲末尾</button>'
+    +'<button type="button" class="btn" data-ref-copy>复制这段</button>'
+    +'<button type="button" class="btn ghost" data-ref-close>收起</button>'
+    +'</div>'
+    +'<p class="ref-undo" id="'+toKey+'-ref-undo" hidden></p>';
+  panel.hidden=false;
+  updateRefStatus(toKey);
+  panel.scrollIntoView({behavior:'smooth',block:'start'});
+}
+function updateRefStatus(toKey){
+  var st=document.getElementById(toKey+'-ref-status');
+  if(!st)return;
+  var target=document.querySelector('.answer-box[data-save="'+toKey+'"]');
+  var cur=target?target.value:'';
+  st.textContent=cur?('你的提纲里已经有 '+cur.length+' 个字，追加只会接在后面，不会盖住。')
+    :'提纲还是空的，追加后这段会成为开头。';
+}
+function appendReferenceToTarget(toKey,val){
+  var target=document.querySelector('.answer-box[data-save="'+toKey+'"]');
+  if(!target)return;
+  var before=target.value;
+  var add=before?(before.replace(/\s+$/,'')+'\n'+val):val;
+  target.value=add;
+  try{localStorage.setItem(toKey,add);}catch(e){}
+  var tip=target.parentElement.querySelector('.save-tip');
+  if(tip)tip.hidden=false;
+  var undo=document.getElementById(toKey+'-ref-undo');
+  if(undo){
+    undo.hidden=false;
+    undo.setAttribute('data-before',before);
+    undo.innerHTML='已追加到提纲。 <button type="button" class="btn ghost" data-ref-undo="'+toKey+'">撤销刚才的追加</button>';
+    updateRefStatus(toKey);
+  }
+  target.focus();
+}
+function undoReference(toKey){
+  var target=document.querySelector('.answer-box[data-save="'+toKey+'"]');
+  var undo=document.getElementById(toKey+'-ref-undo');
+  if(!target||!undo)return;
+  var before=undo.getAttribute('data-before')||'';
+  target.value=before;
+  try{localStorage.setItem(toKey,before);}catch(e){}
+  undo.hidden=true;
+  updateRefStatus(toKey);
+  target.focus();
+}
+function fallbackCopy(text,done){
+  var ta=document.createElement('textarea');
+  ta.value=text;ta.style.position='fixed';ta.style.opacity='0';
+  document.body.appendChild(ta);ta.select();
+  try{document.execCommand('copy');done();}catch(e){}
+  document.body.removeChild(ta);
+}
+function copyReference(btn){
+  var panel=btn.closest('.ref-panel');
+  var content=panel?panel.querySelector('.ref-content'):null;
+  var text=content?content.textContent:'';
+  function done(){var old=btn.textContent;btn.textContent='已复制';setTimeout(function(){btn.textContent=old;},1600);}
+  if(navigator.clipboard&&navigator.clipboard.writeText){
+    navigator.clipboard.writeText(text).then(done).catch(function(){fallbackCopy(text,done);});
+  }else{fallbackCopy(text,done);}
 }
 
 /* 整本书篇目清单：已读 / 书签 状态 */
@@ -340,26 +499,49 @@ function updateReadlistSummary(rlId){
 }
 
 /* 听同一句两种读法：浏览器自带朗读，目标词放慢 + 视觉高亮 */
+function setSpStatus(btn,msg){
+  var sp=btn.querySelector('span');
+  if(sp)sp.textContent=msg;
+}
 function speakSentence(box, btn){
-  if(!('speechSynthesis' in window)){btn.textContent='这个浏览器不支持朗读';return;}
+  if(!('speechSynthesis' in window)){setSpStatus(btn,'这个浏览器不支持朗读');return;}
   var synth=window.speechSynthesis;
   synth.cancel();
+  setSpStatus(btn,'正在准备朗读…');
   var sentence=box.getAttribute('data-sentence');
   var em=btn.getAttribute('data-em');
   box.querySelectorAll('.sp-em').forEach(function(s){
     s.classList.toggle('on', s.getAttribute('data-em')===em);
   });
-  var voice=synth.getVoices().filter(function(v){return v.lang==='zh-CN';})[0];
-  var esc=em.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
-  var tokens=sentence.split(new RegExp('('+esc+')','g'));
-  tokens.forEach(function(tok){
-    if(!tok)return;
-    var ut=new SpeechSynthesisUtterance(tok);
-    ut.lang='zh-CN';
-    if(voice)ut.voice=voice;
-    if(tok===em)ut.rate=0.72;
-    synth.speak(ut);
-  });
+  function go(){
+    var voice=synth.getVoices().filter(function(v){return v.lang==='zh-CN';})[0];
+    var esc=em.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+    var tokens=sentence.split(new RegExp('('+esc+')','g'));
+    var started=false, failed=false;
+    var valid=tokens.filter(Boolean);
+    valid.forEach(function(tok,i){
+      var ut=new SpeechSynthesisUtterance(tok);
+      ut.lang='zh-CN';
+      if(voice)ut.voice=voice;
+      if(tok===em)ut.rate=0.72;
+      ut.onstart=function(){if(!started){started=true;setSpStatus(btn,'正在朗读…');}};
+      ut.onerror=function(){failed=true;setSpStatus(btn,'无法朗读');};
+      ut.onend=function(){if(i===valid.length-1&&!failed)setSpStatus(btn,'再听一次');};
+      synth.speak(ut);
+    });
+  }
+  if(synth.getVoices().length){go();return;}
+  var settled=false;
+  function tryGo(){
+    if(settled)return;
+    if(synth.getVoices().length){settled=true;go();}
+  }
+  if(synth.addEventListener){synth.addEventListener('voiceschanged',tryGo);}
+  setTimeout(function(){
+    if(settled)return;
+    if(synth.getVoices().length){tryGo();}
+    else{settled=true;setSpStatus(btn,'无法朗读');}
+  },1500);
 }
 
 /* ---------- 统一交互（事件委托） ---------- */
@@ -388,57 +570,93 @@ document.addEventListener('click',function(e){
   if(w){
     var host=w.closest('.verse,.prose');
     if(host){
-      host.querySelectorAll('.word').forEach(function(x){if(x!==w)x.classList.remove('on');});
+      host.querySelectorAll('.word').forEach(function(x){
+        if(x!==w){x.classList.remove('on');x.setAttribute('aria-expanded','false');}
+      });
       w.classList.toggle('on');
       var note=host.querySelector('.note-line');
-      if(note){ note.innerHTML = w.classList.contains('on') ? (w.getAttribute('data-note')||'') : ''; }
+      var won=w.classList.contains('on');
+      if(note){ note.innerHTML = won ? (w.getAttribute('data-note')||'') : ''; }
+      w.setAttribute('aria-expanded',won?'true':'false');
     }
     return;
   }
 
-  // 把上一页的观察记录带进当前文本框
+  // 观察记录：进独立参考区，不覆盖提纲
   var bringBtn=node.closest('[data-bring]');
   if(bringBtn){
-    var srcKey=bringBtn.getAttribute('data-bring');
-    var toKey=bringBtn.getAttribute('data-bring-to');
-    var val; try{val=localStorage.getItem(srcKey);}catch(err){}
-    var target=document.querySelector('.answer-box[data-save="'+toKey+'"]');
-    if(target){
-      if(!val){
-        bringBtn.textContent='还没有观察记录，先去上一页记一笔';
-      }else{
-        target.value=val;
-        try{localStorage.setItem(toKey,val);}catch(err){}
-        var tipHost=target.closest('.two-draft')||target.parentElement;
-        var tip=tipHost.querySelector('.save-tip');
-        if(tip)tip.hidden=false;
-        target.focus();
+    openReference(bringBtn,bringBtn.getAttribute('data-bring'),bringBtn.getAttribute('data-bring-to'));
+    return;
+  }
+
+  // 参考区按钮：追加 / 复制 / 收起 / 撤销
+  var refAppend=node.closest('[data-ref-append]');
+  if(refAppend){
+    var toKey=refAppend.getAttribute('data-ref-append');
+    var srcVal;try{srcVal=localStorage.getItem('t5b-try');}catch(e){}
+    var panel=document.getElementById(toKey+'-ref');
+    var rc=panel?panel.querySelector('.ref-content'):null;
+    appendReferenceToTarget(toKey,rc?rc.textContent:srcVal||'');
+    return;
+  }
+  var refUndo=node.closest('[data-ref-undo]');
+  if(refUndo){undoReference(refUndo.getAttribute('data-ref-undo'));return;}
+  var refCopy=node.closest('[data-ref-copy]');
+  if(refCopy){copyReference(refCopy);return;}
+  if(node.closest('[data-ref-close]')){
+    var rp=node.closest('.ref-panel');
+    if(rp)rp.hidden=true;
+    return;
+  }
+
+  // 双稿：把初稿复制到空白修改稿，可撤回（不覆盖已有修改稿）
+  var draftCopy=node.closest('[data-draft-copy]');
+  if(draftCopy){
+    var dbox=document.getElementById(draftCopy.getAttribute('data-draft-copy'));
+    var dtas=dbox.querySelectorAll('textarea.answer-box');
+    var d1=dtas[0],d2=dtas[1];
+    function flash(btn,msg){var old=btn.textContent;btn.textContent=msg;setTimeout(function(){btn.textContent=old;},1800);}
+    if(!d1.value){flash(draftCopy,'初稿还是空的，先写一句');return;}
+    if(d2.value){flash(draftCopy,'修改稿已有内容，没动它');return;}
+    dbox.setAttribute('data-prev-d2',d2.value);
+    d2.value=d1.value;
+    try{localStorage.setItem(d2.getAttribute('data-save'),d2.value);}catch(err){}
+    var dUndo=dbox.querySelector('[data-draft-undo]');
+    if(dUndo)dUndo.hidden=false;
+    d2.focus();
+    return;
+  }
+  var draftUndo=node.closest('[data-draft-undo]');
+  if(draftUndo){
+    var ubox=document.getElementById(draftUndo.getAttribute('data-draft-undo'));
+    var utas=ubox.querySelectorAll('textarea.answer-box');
+    var ud2=utas[1];
+    ud2.value=ubox.getAttribute('data-prev-d2')||'';
+    try{localStorage.setItem(ud2.getAttribute('data-save'),ud2.value);}catch(err){}
+    draftUndo.hidden=true;
+    ud2.focus();
+    return;
+  }
+
+  // 统一三阶段导航：切模式 + 滚动定位 + 焦点 + 可复制地址
+  var stageLink=node.closest('.inpage-nav a[data-stage]');
+  if(stageLink){
+    e.preventDefault();
+    var stageMode=stageLink.getAttribute('data-stage');
+    var targetId=stageLink.getAttribute('data-target');
+    try{localStorage.setItem('g7a-mode',stageMode);}catch(err){}
+    applyMode(stageMode);
+    setActiveStage(targetId);
+    var stageTarget=document.getElementById(targetId);
+    if(stageTarget){
+      stageTarget.scrollIntoView({behavior:'smooth',block:'start'});
+      var label=stageTarget.querySelector('.section-label');
+      if(label){
+        if(!label.hasAttribute('tabindex'))label.setAttribute('tabindex','-1');
+        setTimeout(function(){try{label.focus({preventScroll:true});}catch(err){}},200);
       }
     }
-    return;
-  }
-
-  // 课内三段跳转：目标在当前模式隐藏时，先切到对应模式再定位
-  var jmp=node.closest('.inpage-nav a');
-  if(jmp){
-    e.preventDefault();
-    var needMode=jmp.getAttribute('data-jump');
-    if(needMode && needMode!==getMode()){
-      try{localStorage.setItem('g7a-mode',needMode);}catch(err){}
-      applyMode(needMode);
-    }
-    var target=document.querySelector(jmp.getAttribute('href'));
-    if(target){target.scrollIntoView({behavior:'smooth',block:'start'});}
-    return;
-  }
-
-  // 课前/课后模式切换
-  var mb=node.closest('.mode-btn');
-  if(mb){
-    var mode=mb.getAttribute('data-mode');
-    try{localStorage.setItem('g7a-mode',mode);}catch(err){}
-    applyMode(mode);
-    window.scrollTo(0,0);
+    try{history.replaceState(null,'','#'+targetId);}catch(err){}
     return;
   }
 
@@ -507,8 +725,12 @@ document.addEventListener('click',function(e){
       try{localStorage.setItem('g7a-mode','post');}catch(err){}
       applyMode('post');
     }
+    var firstShown=null;
     if(act.getAttribute('data-show')){
-      document.querySelectorAll(act.getAttribute('data-show')).forEach(function(x){x.hidden=false;});
+      document.querySelectorAll(act.getAttribute('data-show')).forEach(function(x){
+        if(x.hidden&&!firstShown)firstShown=x;
+        x.hidden=false;
+      });
     }
     if(act.getAttribute('data-hide')){
       document.querySelectorAll(act.getAttribute('data-hide')).forEach(function(x){x.hidden=true;});
@@ -522,6 +744,8 @@ document.addEventListener('click',function(e){
       var parts=tg.split('|');
       document.querySelectorAll(parts[0]).forEach(function(x){x.classList.toggle(parts[1]);});
     }
+    saveStepState();
+    if(firstShown&&firstShown.classList.contains('step'))bringStepIntoFocus(firstShown);
   }
 });
 
@@ -533,7 +757,13 @@ function failScreen(){
     +'<p style="margin-top:18px"><a class="btn solid" href="index.html">回七上目录</a></p></main>';
 }
 
+function clearBootSkeleton(){
+  window.__G7A_BOOTED=true;
+  var sk=document.getElementById('boot-skeleton');
+  if(sk&&sk.parentNode)sk.parentNode.removeChild(sk);
+}
 function safeStart(){
+  clearBootSkeleton();
   try{
     if(document.body.getAttribute('data-lesson')){renderLesson();}
     else if(document.body.getAttribute('data-extra')){renderExtra();}

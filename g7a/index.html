@@ -32,6 +32,11 @@
     <p class="lead">六个单元，从四季风景写到想象世界。每课都分三步：先热身、再读懂、最后回味。点任意一课开始。</p>
   </div>
   <div id="resume"></div>
+  <div class="find-box">
+    <label for="find-input">找一课</label>
+    <input id="find-input" type="search" placeholder="输课号、课题或作者，比如 20、狼、蒲松龄" autocomplete="off">
+    <div id="find-results" class="find-results" hidden></div>
+  </div>
   <nav id="unit-jump" class="unit-jump" aria-label="跳到各单元"></nav>
   <div id="toc"></div>
 </main>
@@ -41,6 +46,13 @@
 <script src="data.js"></script>
 <script>
 (function(){
+  if(typeof BOOK_G7A==='undefined'||!BOOK_G7A){
+    document.getElementById('toc').innerHTML=
+      '<div class="boot-error" style="padding:24px"><p>目录数据没加载出来，可能是网络断了一下。</p>'
+      +'<p><button type="button" class="btn solid" onclick="location.reload()">重新加载</button>'
+      +'<a class="btn ghost" href="../index.html">回书架</a></p></div>';
+    return;
+  }
   function pad(n){return (n<10?'0':'')+n;}
   function hrefOfLesson(l){return 'lesson-'+pad(l.no)+'.html';}
   var html='';
@@ -70,6 +82,33 @@
     return '<a href="#unit-'+u.id+'" style="--uc:'+u.color+'">'+pad(u.id)+' '+u.title+'</a>';
   }).join('');
   document.getElementById('unit-jump').innerHTML=jumpHtml;
+
+  /* 找一课：按课号、课题或作者实时匹配，不用先猜在哪个单元 */
+  var allLessons=[];
+  BOOK_G7A.units.forEach(function(u){
+    u.lessons.forEach(function(l){
+      allLessons.push({no:l.no,title:l.title,author:l.author||'',href:hrefOfLesson(l)});
+    });
+  });
+  var findInput=document.getElementById('find-input');
+  var findResults=document.getElementById('find-results');
+  findInput.addEventListener('input', function(){
+    var q=findInput.value.trim().toLowerCase();
+    if(!q){findResults.hidden=true;findResults.innerHTML='';return;}
+    var matches=allLessons.filter(function(l){
+      return String(l.no)===q
+        || l.title.toLowerCase().indexOf(q)>=0
+        || l.author.toLowerCase().indexOf(q)>=0;
+    });
+    if(!matches.length){
+      findResults.innerHTML='<p class="find-empty">没找到，换个字试试（可输课号、课题或作者）</p>';
+    }else{
+      findResults.innerHTML=matches.map(function(l){
+        return '<a href="'+l.href+'"><span class="ln">'+l.no+'</span><span class="ft">'+l.title+'</span><span class="lau">'+l.author+'</span></a>';
+      }).join('');
+    }
+    findResults.hidden=false;
+  });
 
   /* 点胶囊平滑滚动，并把锚点写进地址栏，不触发默认跳动 */
   document.getElementById('unit-jump').addEventListener('click', function(ev){

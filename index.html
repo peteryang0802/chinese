@@ -32,6 +32,8 @@
     <p class="lead">这里不背不考，只帮你把课文读懂、读出味道。先从七年级上册开始，其余几本会陆续放进书架。</p>
   </div>
 
+  <div id="home-resume"></div>
+
   <div class="books">
     <a class="book" href="g7a/index.html">
       <span class="spine" style="background:var(--u1)"></span>
@@ -84,5 +86,16 @@
 </main>
 
 <footer class="foot wrap">我的语文书房 · 一个专属于你的语文角落</footer>
+
+<script>
+(function(){
+  var last,title;
+  try{last=localStorage.getItem('g7a-last');title=localStorage.getItem('g7a-last-title');}catch(e){}
+  if(last){
+    document.getElementById('home-resume').innerHTML=
+      '<a class="resume-btn" href="g7a/'+last+'">继续上次：'+(title||last)+' →</a>';
+  }
+})();
+</script>
 </body>
 </html>
