@@ -92,11 +92,21 @@
   });
   var findInput=document.getElementById('find-input');
   var findResults=document.getElementById('find-results');
+  /* 归一化：全角数字转半角，去掉“第”“课”，让“第20课”“20课”“２０”都能当课号找 */
+  function normalizeQuery(raw){
+    var s=raw.toLowerCase().replace(/[\uFF10-\uFF19]/g,function(ch){
+      return String.fromCharCode(ch.charCodeAt(0)-0xFEE0);
+    });
+    var num=s.replace(/第/g,'').replace(/课/g,'').replace(/\s/g,'');
+    return {text:s.trim(),num:num};
+  }
   findInput.addEventListener('input', function(){
-    var q=findInput.value.trim().toLowerCase();
+    var nq=normalizeQuery(findInput.value);
+    var q=nq.text;
     if(!q){findResults.hidden=true;findResults.innerHTML='';return;}
     var matches=allLessons.filter(function(l){
-      return String(l.no)===q
+      return String(l.no)===nq.num
+        || String(l.no)===q
         || l.title.toLowerCase().indexOf(q)>=0
         || l.author.toLowerCase().indexOf(q)>=0;
     });
@@ -142,7 +152,9 @@
       '<a class="resume-btn" href="'+last+'">继续上次：'+(info?info.title:last)+' →</a>';
     if(info&&!location.hash){
       var box=document.getElementById('unit-'+info.unit);
-      if(box){box.classList.add('unit-last');box.scrollIntoView({block:'start'});}
+      /* 只给上次单元加金色高亮，不自动滚走：找课框和续读留在顶部当前可见处，
+         想回到上次可点续读按钮，或自己滚到高亮单元 */
+      if(box){box.classList.add('unit-last');}
     }
   }
   if(location.hash){

@@ -96,7 +96,7 @@ img,svg{max-width:100%}
 .unit-last{outline:3px solid var(--gold);outline-offset:2px}
 
 /* 找一课 */
-.find-box{margin:14px 0 6px}
+.find-box{margin:14px 0 6px;position:sticky;top:0;z-index:20;background:var(--paper);padding:6px 0 8px}
 .find-box label{display:block;font-weight:800;margin-bottom:6px;font-size:.95rem}
 .find-box input{width:100%;min-height:48px;padding:12px 14px;border:1.5px solid var(--line);
   border-radius:12px;font-size:1rem;background:#fff;box-sizing:border-box}
@@ -148,20 +148,25 @@ img,svg{max-width:100%}
 .verse-line{margin:0 0 2px}
 .verse-line:last-of-type{margin-bottom:0}
 .verse .word{cursor:pointer;border-radius:7px;padding:1px 4px;position:relative;transition:background .15s}
-.verse .word::after{content:"";position:absolute;left:5px;right:5px;bottom:0;height:2px;background:currentColor;
-  transform:scaleX(0);transition:transform .2s}
-.verse .word:hover::after,.verse .word.on::after{transform:scaleX(1)}
+.verse .word::after{content:"";position:absolute;left:5px;right:5px;bottom:0;height:1px;background:currentColor;
+  opacity:.45;transform:scaleX(1);transition:transform .2s,height .15s,opacity .15s}
+.verse .word:hover::after,.verse .word.on::after{transform:scaleX(1);height:2px;opacity:1}
 .verse .word.on{background:#efe9d8}
 .w-go{color:var(--go)}.w-sit{color:var(--sit)}.w-key{color:var(--u3)}.w-gold{color:#8a6d1f}
 .w-red{color:var(--u4)}.w-purple{color:var(--u6)}.w-green{color:var(--u1)}
-.note-line{margin-top:12px;color:var(--muted);font-size:.92rem;min-height:1.5em}
+.note-line{margin-top:10px;color:var(--muted);font-size:.92rem;min-height:1.5em;background:#f3ede0;border-radius:8px;padding:8px 10px}
+.note-line:empty{display:none}
+.gloss-hint{margin:10px 0 4px;padding:9px 12px;border-radius:9px;background:#e7eef6;color:#33506e;
+  font-size:.92rem;border-left:4px solid #5a7fa8}
 .note-line b{color:var(--ink)}
 
 /* 普通正文里的可点 */
 .prose{font-size:1.05rem}
 .prose p{margin:10px 0}
 .prose .word{cursor:pointer;border-radius:6px;padding:0 3px;position:relative}
+.prose .word::after{content:"";position:absolute;left:3px;right:3px;bottom:0;height:1px;background:currentColor;opacity:.45}
 .prose .word.on{background:#efe9d8}
+.prose .word.on::after{height:2px;opacity:1}
 /* 行内可点词：用透明伪元素把热区撑到 44px，不破坏排版 */
 .verse .word::before,.prose .word::before{
   content:"";position:absolute;left:50%;top:50%;
@@ -185,6 +190,15 @@ img,svg{max-width:100%}
 .cmp-panel{padding:16px}
 .cmp-panel svg{display:block;width:100%;height:auto}
 .cmp-note{color:var(--muted);margin-top:10px;font-size:1rem}
+/* 手机横屏（低高度）：压缩标签和留白，限制图高，切换不用滚动就能看到整株和说明 */
+@media (max-height:480px) and (orientation:landscape){
+  .compare{margin-top:8px}
+  .cmp-tabs{padding:5px 6px;gap:5px}
+  .cmp-tab{min-height:40px;padding:5px 18px}
+  .cmp-panel{padding:8px 10px}
+  .cmp-panel svg{max-height:230px;width:auto;max-width:100%;margin:0 auto}
+  .cmp-note{margin-top:6px;font-size:.9rem}
+}
 
 /* 两稿并排 */
 .two-draft{margin-top:12px}
@@ -252,6 +266,8 @@ img,svg{max-width:100%}
 .answer-box{width:100%;min-height:96px;margin-top:12px;padding:14px;border-radius:12px;border:1.5px solid var(--line);
   background:#fbf8ef;font:inherit;resize:vertical}
 .save-tip{font-size:.85rem;color:var(--muted);margin-top:8px}
+.save-fail{font-size:.85rem;color:#9a3b23;margin-top:8px;line-height:1.7}
+.save-fail .fail-copy{min-height:40px;padding:6px 12px}
 
 /* 简单时间轴/线索 */
 .timeline{margin-top:14px;position:relative;padding-left:26px}

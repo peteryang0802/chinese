@@ -359,6 +359,20 @@ function enhanceA11y(){
       w.setAttribute('aria-expanded',w.classList.contains('on')?'true':'false');
     }
   });
+  /* 第一次遇到可点词，给一句操作提示，之后不再出现 */
+  var firstWord=document.querySelector('.word');
+  if(firstWord){
+    var seen=false;
+    try{seen=localStorage.getItem('gloss-hint-seen')==='1';}catch(e){}
+    if(!seen&&!document.querySelector('.gloss-hint')){
+      var hint=document.createElement('p');
+      hint.className='gloss-hint';
+      hint.textContent='带下划线的字词能点，点一下就在原句旁边看释义。';
+      var host=firstWord.closest('.verse,.prose');
+      if(host&&host.parentNode){host.parentNode.insertBefore(hint,host);}
+      try{localStorage.setItem('gloss-hint-seen','1');}catch(e){}
+    }
+  }
 }
 
 /* ---------- 课内步骤展开状态持久化（刷新不丢） ---------- */
@@ -453,6 +467,8 @@ function appendReferenceToTarget(toKey,val){
   if(undo){
     undo.hidden=false;
     undo.setAttribute('data-before',before);
+    undo.setAttribute('data-added',val);
+    undo.setAttribute('data-joined',add);
     undo.innerHTML='已追加到提纲。 <button type="button" class="btn ghost" data-ref-undo="'+toKey+'">撤销刚才的追加</button>';
     updateRefStatus(toKey);
   }
@@ -463,8 +479,35 @@ function undoReference(toKey){
   var undo=document.getElementById(toKey+'-ref-undo');
   if(!target||!undo)return;
   var before=undo.getAttribute('data-before')||'';
-  target.value=before;
-  try{localStorage.setItem(toKey,before);}catch(e){}
+  var joined=undo.getAttribute('data-joined')||'';
+  var cur=target.value;
+  var next=null;
+  if(cur===joined){
+    /* 追加后没动过：直接恢复追加前 */
+    next=before;
+  }else if(cur.indexOf(joined)===0&&cur.length>joined.length){
+    /* 追加段后面又写了新内容：只移除追加段，保留后面新写的 */
+    var tail=cur.slice(joined.length).replace(/^\n+/,'');
+    next=before?(before+(tail?'\n'+tail:'')):tail;
+  }
+  if(next===null){
+    /* 追加段被手动改过，不做破坏性覆盖：给可恢复副本，由用户决定 */
+    undo.hidden=false;
+    undo.innerHTML='这段被手动改过，撤销可能删掉你新写的内容。 '
+      +'<button type="button" class="btn ghost" data-ref-copy-before>复制追加前的提纲</button> '
+      +'<button type="button" class="btn ghost" data-ref-undo-force="'+toKey+'">仍要恢复追加前</button>';
+    var cb=undo.querySelector('[data-ref-copy-before]');
+    if(cb)cb.addEventListener('click',function(){fallbackCopy(before,function(){cb.textContent='已复制';});});
+    var fb=undo.querySelector('[data-ref-undo-force]');
+    if(fb)fb.addEventListener('click',function(){
+      target.value=before;
+      try{localStorage.setItem(toKey,before);}catch(e){}
+      undo.hidden=true;updateRefStatus(toKey);target.focus();
+    });
+    return;
+  }
+  target.value=next;
+  try{localStorage.setItem(toKey,next);}catch(e){}
   undo.hidden=true;
   updateRefStatus(toKey);
   target.focus();
@@ -553,6 +596,22 @@ document.addEventListener('input',function(e){
     var tipHost=tb.closest('.two-draft')||tb.parentElement;
     var tip=tipHost.querySelector('.save-tip');
     if(tip){tip.hidden=!ok;}
+    var fail=tipHost.querySelector('.save-fail');
+    if(ok){
+      if(fail)fail.hidden=true;
+    }else{
+      if(!fail){
+        fail=document.createElement('p');
+        fail.className='save-fail';
+        fail.innerHTML='这次没存下来，浏览器不让写本地记录。 <button type="button" class="btn ghost fail-copy">复制这份草稿</button>';
+        fail.querySelector('.fail-copy').addEventListener('click',function(){
+          var btn=this;
+          fallbackCopy(tb.value,function(){btn.textContent='已复制';});
+        });
+        tipHost.appendChild(fail);
+      }
+      fail.hidden=false;
+    }
   }
 });
 
@@ -576,7 +635,17 @@ document.addEventListener('click',function(e){
       w.classList.toggle('on');
       var note=host.querySelector('.note-line');
       var won=w.classList.contains('on');
-      if(note){ note.innerHTML = won ? (w.getAttribute('data-note')||'') : ''; }
+      if(note){
+        if(won){
+          note.innerHTML=w.getAttribute('data-note')||'';
+          /* 释义就近插到词所在行后面，原词、原句和释义同区，不用滚到篇末 */
+          var line=w.closest('.verse-line,p');
+          if(line&&line.parentNode===host){line.insertAdjacentElement('afterend',note);}
+          else{host.insertBefore(note,w.closest('.verse-line,p')||null);}
+        }else{
+          note.innerHTML='';
+        }
+      }
       w.setAttribute('aria-expanded',won?'true':'false');
     }
     return;
@@ -724,6 +793,8 @@ document.addEventListener('click',function(e){
     if(act.hasAttribute('data-post')){
       try{localStorage.setItem('g7a-mode','post');}catch(err){}
       applyMode('post');
+      setActiveStage('sec-read');
+      try{history.replaceState(null,'','#sec-read');}catch(err){}
     }
     var firstShown=null;
     if(act.getAttribute('data-show')){

@@ -13,7 +13,7 @@ var BOOK_G7A = {
         {no:1, star:false, title:'春', author:'朱自清', type:'写景散文', id:'l1'},
         {no:2, star:false, title:'济南的冬天', author:'老舍', type:'写景散文', id:'l2'},
         {no:3, star:true,  title:'雨的四季', author:'刘湛秋', type:'写景散文', id:'l3'},
-        {no:4, star:false, title:'古代诗歌四首', author:'曹操·李白·王湾·马致远', type:'古诗词', id:'l4'}
+        {no:4, star:false, title:'古代诗歌四首', author:'曹操·王湾·李白·马致远', type:'古诗词', id:'l4'}
       ],
       extras:[
         {label:'阅读综合实践 · 朗读的重音与停连', href:'practice-1.html'},
@@ -26,7 +26,7 @@ var BOOK_G7A = {
         {no:5, star:false, title:'秋天的怀念', author:'史铁生', type:'叙事散文', id:'l5'},
         {no:6, star:false, title:'散步', author:'莫怀戚', type:'叙事散文', id:'l6'},
         {no:7, star:true,  title:'散文诗二首', author:'泰戈尔·冰心', type:'散文诗', id:'l7'},
-        {no:8, star:false, title:'《世说新语》二则', author:'刘义庆', type:'文言文', id:'l8'}
+        {no:8, star:false, title:'《世说新语》二则', author:'刘义庆（组织编写）', type:'文言文', id:'l8'}
       ],
       extras:[
         {label:'阅读综合实践 · 语气语调与词语的妙处', href:'practice-2.html'},
@@ -82,7 +82,7 @@ var BOOK_G7A = {
         {no:21, star:false, title:'小圣施威降大圣', author:'吴承恩', type:'古典小说', id:'l21'},
         {no:22, star:false, title:'皇帝的新装', author:'安徒生', type:'童话', id:'l22'},
         {no:23, star:true,  title:'女娲造人', author:'袁珂', type:'神话', id:'l23'},
-        {no:24, star:false, title:'寓言四则', author:'《伊索寓言》《吕氏春秋》《列子》', type:'寓言', id:'l24'}
+        {no:24, star:false, title:'寓言四则', author:'《伊索寓言》（罗念生等译）、《吕氏春秋》、《列子》', type:'寓言', id:'l24'}
       ],
       extras:[
         {label:'阅读综合实践 · 想象与联想', href:'practice-6.html'},
@@ -184,7 +184,8 @@ var LESSONS_G7A = {
           '在北中国的冬天，而能有<span class="word w-gold" data-note="文眼：又暖和又晴朗，全文都围着这两个字。">温晴</span>的天气，济南真得算个宝地。',
           '这一圈小山在冬天特别可爱，好像是把济南放在一个<span class="word w-key" data-note="比喻加拟人：小山像摇篮护着济南，看着就暖和。">小摇篮</span>里，他们全安静不动地低声地说：“你们放心吧，这儿准保暖和。”',
           '等到快日落的时候，微黄的阳光斜射在山腰上，那点儿薄雪好像忽然<span class="word w-red" data-note="拟人：薄雪像害羞的少女，露出一点粉色。">害了羞</span>，微微露出点儿粉色。',
-          '就凭这些绿的精神，水也<span class="word w-green" data-note="拟人：水也有了善心，舍不得冻上，处处是春意。">不忍得</span>冻上；况且那长枝的垂柳还要在水里照个影儿呢。整个的是块空灵的<span class="word w-purple" data-note="比喻：全城清亮通透，像一块蓝水晶。">蓝水晶</span>。'
+          '就凭这些绿的精神，水也<span class="word w-green" data-note="拟人：水也有了善心，舍不得冻上，处处是春意。">不忍得</span>冻上；况且那长枝的垂柳还要在水里照个影儿呢。',
+          '看吧，由澄清的河水慢慢往上看吧，空中，半空中，天上，自上而下全是那么清亮，那么蓝汪汪的，整个的是块空灵的<span class="word w-purple" data-note="比喻：全城清亮通透，像一块蓝水晶。">蓝水晶</span>。'
         ]},
         {t:'cards', items:[
           {front:'对比', back:'拿北平的风、伦敦的雾、热带的烈日跟济南比，一对比，温晴就显出来了。'},
@@ -236,7 +237,7 @@ var LESSONS_G7A = {
   },
 
   l4: {
-    kind:'古诗词', author:'曹操·李白·王湾·马致远',
+    kind:'古诗词', author:'曹操·王湾·李白·马致远',
     lead:'四首诗，四种心境。先让文字在脑子里变成画面，再读背后的情感。',
     prep:{
       title:'课前看一眼 · 先选一首',
@@ -260,7 +261,8 @@ var LESSONS_G7A = {
           '<span style="font-size:.78em;color:var(--muted)">观沧海 · 曹操</span>',
           '东临碣石，以<span class="word w-key" data-note="诗眼：全诗由这个“观”字统领，下面都是他看到、想到的。">观</span>沧海。',
           '水何澹澹，山岛竦峙。',
-          '树木丛生，百草丰茂。秋风萧瑟，洪波涌起。',
+          '树木丛生，百草丰茂。',
+          '秋风萧瑟，洪波涌起。',
           '日月之行，<span class="word w-gold" data-note="虚景、想象：日月星辰像从大海里起落，写出大海吞吐天地的气魄。">若出其中</span>；星汉灿烂，若出其里。',
           '幸甚至哉，歌以咏志。'
         ]},
@@ -374,8 +376,8 @@ var LESSONS_G7A = {
           '母亲改走小路，难走的地方我背她、妻子背儿子'
         ]},
         {t:'prose', noteId:'l6-note', paras:[
-          '今年的春天来得太迟，太迟了，有一些老人挺不住，在清明将到的时候去世了。但是春天总算来了，我的母亲又<span class="word w-gold" data-note="写出冬天的难，也写出“我”庆幸母亲挺过来了。">熬</span>过了一个严冬。',
-          '后来发生了<span class="word w-red" data-note="大词小用：把走哪条路说成“分歧”，幽默里见郑重。">分歧</span>。一霎时，我感到了<span class="word w-key" data-note="人到中年上有老下有小，一个选择背后是责任。">责任的重大</span>，就像领袖人物在严重关头时那样。',
+          '今年的春天来得太迟，太迟了，有一些老人挺不住，在清明将到的时候去世了。但是春天总算来了。我的母亲又<span class="word w-gold" data-note="写出冬天的难，也写出“我”庆幸母亲挺过来了。">熬</span>过了一个严冬。',
+          '后来发生了<span class="word w-red" data-note="大词小用：把走哪条路说成“分歧”，幽默里见郑重。">分歧：我的母亲要走大路，大路平顺；我的儿子要走小路，小路有意思</span>……一霎时，我感到了<span class="word w-key" data-note="人到中年上有老下有小，一个选择背后是责任。">责任的重大</span>，就像领袖人物在严重关头时那样。',
           '好像我背上的同她背上的加起来，就是<span class="word w-purple" data-note="母亲代表过去、儿子代表未来，加起来就是整个世界。">整个世界</span>。'
         ]},
         {t:'cards', items:[
@@ -430,7 +432,7 @@ var LESSONS_G7A = {
   },
 
   l8: {
-    kind:'文言文', author:'刘义庆',
+    kind:'文言文', author:'刘义庆（组织编写）',
     lead:'《世说新语》是南朝宋刘义庆组织编写的志人小说集。下面两个小故事，一个比谁的比喻妙，一个看七岁孩子怎么讲道理。字词在上下文里猜。',
     prep:{
       title:'热身 · 先说一件身边事',
@@ -491,7 +493,7 @@ var LESSONS_G7A = {
           '三味书屋：见先生、读书、课间溜到后园偷玩'
         ]},
         {t:'prose', noteId:'l9-note', paras:[
-          '<span class="word w-key" data-note="两个“不必说”写整体，“单是”突出局部：光这一点就趣味无穷，别处更不用说。">不必说碧绿的菜畦，光滑的石井栏，高大的皂荚树，紫红的桑椹；也不必说鸣蝉在树叶里长吟，肥胖的黄蜂伏在菜花上，轻捷的叫天子忽然从草间直窜向云霄里去了。单是周围的短短的泥墙根一带，就有无限趣味</span>。',
+          '<span class="word w-key" data-note="两个“不必说”写整体，“单是”突出局部：光这一点就趣味无穷，别处更不用说。">不必说碧绿的菜畦，光滑的石井栏，高大的皂荚树，紫红的桑椹；也不必说鸣蝉在树叶里长吟，肥胖的黄蜂伏在菜花上，轻捷的叫天子（云雀）忽然从草间直窜向云霄里去了。单是周围的短短的泥墙根一带，就有无限趣味</span>。',
           '油蛉在这里<span class="word w-gold" data-note="拟人：虫鸣像在开音乐会，这是孩子的耳朵。">低唱，蟋蟀们在这里弹琴</span>。',
           '雪地捕鸟：扫开一块雪，<span class="word w-red" data-note="露出地面、鸟雀下来啄食、走到竹筛底下，这些动作交代清楚，再一拉绳就罩住。">露出地面，用一枝短棒支起一面大的竹筛来，下面撒些秕谷，棒上系一条长绳，人远远地牵着，看鸟雀下来啄食，走到竹筛底下的时候，将绳子一拉，便罩住了</span>。一连串动词扫、支、撒、系、牵、拉、罩，把捕鸟写得像在眼前。',
           '我对他很恭敬，因为我早听到，他是本城中极<span class="word w-purple" data-note="鲁迅对私塾先生的评价：严厉，但值得恭敬。">方正，质朴，博学</span>的人。'
@@ -532,7 +534,7 @@ var LESSONS_G7A = {
         {t:'prose', noteId:'l10-note', paras:[
           '读《水浒传》时，会把家乡长江边焦山一带当成梁山泊背景，似乎目睹何涛、黄安率领的官军在茫茫荡荡的焦山下，在芦苇水港中走投无路、狼狈逃窜，犹如身历其境，真是<span class="word w-gold" data-note="读书读得入迷，像亲身在故事里。">津津有味</span>。',
           '后来才懂得，这就是<span class="word w-key" data-note="生动的形象可以形成深刻的记忆，所以小时候读书记得牢。">形象思维</span>的作用，生动的形象可以形成深刻的记忆。',
-          '老师入情入理的讲课也在我心上<span class="word w-red" data-note="雕镂就是雕刻，像刻在心上，几十年忘不了。">雕镂</span>下深刻的印象。',
+          '老师入情入理的讲课也在我心上<span class="word w-red" data-note="雕镂就是雕刻，像刻在心上，几十年忘不了。">雕镂</span>下深刻的印象，培养了我课外阅读的兴趣。',
           '老师朗诵时头与肩膀左右摇摆着，真是<span class="word w-purple" data-note="老师投入的样子，把爱国情怀传给了学生。">悲歌慷慨</span>，我们这些做学生的，爱国情怀油然而生。'
         ]}
       ]
@@ -555,7 +557,7 @@ var LESSONS_G7A = {
       ]
     },
     read:{
-      title:'读懂 · 一个字打开一扇门',
+      title:'读懂 · 一个词打开一扇门',
       blocks:[
         {t:'timeline', items:[
           {t:'老师到来', d:'莎莉文握住她的手，给她爱'},
@@ -564,8 +566,8 @@ var LESSONS_G7A = {
           {t:'第一次悔恨', d:'为摔坏的娃娃掉眼泪'}
         ]},
         {t:'prose', noteId:'l11-note', paras:[
-          '突然间，我感觉到一种<span class="word w-gold" data-note="像有什么被忘记的东西又被想起，那是令人激动的记忆的回归。">模糊的意识</span>——好像有什么被忘记的东西突然之间又被想起，那是令人激动的记忆的回归，神秘的语言就这样被阐释清楚了。',
-          '我明白了“水”的意思，<span class="word w-key" data-note="注意主语：是“这个有生命的词”唤醒了灵魂，不是水本身；这个词给灵魂带来光明、希望和自由。">这个有生命的词唤醒了我的灵魂</span>，给我的灵魂带来了光明、希望和快乐，我的灵魂获得了自由。',
+          '突然之间，我感觉到一种<span class="word w-gold" data-note="像有什么被忘记的东西又被想起，那是令人激动的记忆的回归。">模糊的意识</span>——好像有什么被忘记的东西突然之间又被想起，那是令人激动的记忆的回归，神秘的语言就这样<span class="word w-gold" data-note="教材原文是“神奇地”，写语言被理解时的奇妙。">神奇地</span>被阐释清楚了。',
+          '我明白了“水”的意思，<span class="word w-key" data-note="注意主语：是“这个有生命的词”唤醒了灵魂，不是水本身；这个词给灵魂带来光明、希望和自由。">这个有生命的词唤醒了我的灵魂</span>，给我的灵魂带来了光明、希望和快乐，我的灵魂获得了自由！',
           '我想起了被我摔坏的娃娃，摸索着走到壁炉前把碎片拾起来，<span class="word w-red" data-note="拼命想把碎片拼起来，可一切只是徒劳，这才第一次感受到深深的悔恨和悲伤。">拼命想把碎片拼起来，可一切只是徒劳</span>，眼睛充满了泪水，第一次感受到深深的悔恨和悲伤。'
         ]}
       ]
@@ -683,7 +685,7 @@ var LESSONS_G7A = {
       ]
     },
     back:{
-      title:'回味 · 你想成为哪种人',
+      title:'回味 · 哪一方面最打动你',
       blocks:[
         {t:'bigq', q:'结尾五个“一个……的人”，说的是同一种精神的五个方面，不是五种独立的人。哪一方面最打动你？你是从哪几个字读出来的？', save:'l13-back1'}
       ]
@@ -711,7 +713,8 @@ var LESSONS_G7A = {
         {t:'prose', noteId:'l14-note', paras:[
           '母亲是个<span class="word w-gold" data-note="劳动能手，一个词点出母亲的勤劳。">好劳动</span>。从我能记忆时起，总是天不亮就起床。',
           '<span class="word w-key" data-note="贯穿全文的线索：母亲一生都在劳动，开头那句“勤劳一生”说的就是这个。">母亲最大的特点是一生不曾脱离过劳动</span>。',
-          '<span class="word w-red" data-note="母亲教给“我”斗争的经验、生产的知识和革命的意志。">我应该感谢母亲，她教给我与困难作斗争的经验</span>，又教给我生产的知识和革命的意志，鼓励我以后走上革命的道路。',
+          '<span class="word w-red" data-note="第一处感谢：母亲教给“我”与困难作斗争的经验，还给了“我”强健的身体、勤劳的习惯。">我应该感谢母亲，她教给我与困难作斗争的经验</span>。母亲又给我一个强健的身体，一个勤劳的习惯，使我从来没感到过劳累。',
+          '<span class="word w-red" data-note="第二处感谢：母亲教给“我”生产的知识和革命的意志，鼓励“我”走上革命道路。">我应该感谢母亲，她教给我生产的知识和革命的意志</span>，鼓励我以后走上革命的道路。',
           '只有这种知识，这种意志，才是世界上<span class="word w-purple" data-note="母亲给的东西，比任何钱财都珍贵。">最可宝贵的财产</span>。'
         ]},
         {t:'cards', items:[
@@ -790,11 +793,11 @@ var LESSONS_G7A = {
           '夫君子之行，<span class="word w-key" data-note="全文枢纽：宁静专一，修身、学习都靠它。">静</span>以修身，俭以养德。',
           '非<span class="word w-gold" data-note="不慕名利才能明确志向，内心宁静才能走得远。">淡泊无以明志，非宁静无以致远</span>。',
           '夫学须静也，才须学也，非学无以<span class="word w-purple" data-note="增长才干，“广”是增长。">广才</span>，非志无以成学。',
-          '<span class="word w-red" data-note="放纵懈怠、轻薄浮躁，是“静”的反面。">淫慢则不能励精，险躁则不能治性</span>。',
+          '<span class="word w-red" data-note="淫慢是放纵懈怠，对的是“励精”（振奋精神）：懈怠了就提不起精神。">淫慢则不能励精</span>，<span class="word w-red" data-note="险躁是轻薄浮躁，注释说它跟上文“宁静”相对：浮躁了就修养不好性情。">险躁则不能治性</span>。',
           '年与时<span class="word w-green" data-note="时光飞逝，意志消磨，要珍惜时间。">驰</span>，意与日去，遂成枯落，<span class="word w-gold" data-note="意思是大多对社会没有任何贡献，不能为社会所用。">多不接世</span>，悲守穷庐，将复何及！'
         ]},
         {t:'step', id:'l16-chain', title:'成对辨析：静、学、才、志怎么连起来', blocks:[
-          {t:'html', h:'<p>课文里这几句是一条链：<b>学须静</b>（学习要靠宁静专一），<b>才须学</b>（才干要靠学习），<b>非学无以广才</b>（不学就没法增长才干），<b>非志无以成学</b>（没有志向就完不成学业）。静、学、才、志一环扣一环。反面的淫慢、险躁，正好是“静”的反义词。</p>'},
+          {t:'html', h:'<p>课文里这几句是一条链：<b>学须静</b>（学习要靠宁静专一），<b>才须学</b>（才干要靠学习），<b>非学无以广才</b>（不学就没法增长才干），<b>非志无以成学</b>（没有志向就完不成学业）。静、学、才、志一环扣一环。反面也各有各的对照：<b>淫慢</b>（放纵懈怠）对的是<b>励精</b>（振奋精神），<b>险躁</b>（轻薄浮躁）对的是<b>宁静</b>和治性。别把它俩当成同一个反义词。</p>'},
           {t:'bigq', q:'顺着“静—学—才—志”这条链，说说哪一环断了会怎样？用自己的话写。', save:'l16-chain-q'}
         ]},
         {t:'cards', items:[
@@ -834,9 +837,11 @@ var LESSONS_G7A = {
         {t:'prose', noteId:'l17-note', paras:[
           '它在我家仍是一只<span class="word w-key" data-note="活着却不被看见，为后来第一个被怀疑埋下伏笔。">若有若无</span>的动物。',
           '我没有判断明白，便<span class="word w-red" data-note="文眼：没弄清真相就下判断，是冤案的根源。">妄下断语</span>，冤枉了一只不能说话辩诉的动物。',
-          '隔了几天，我看见一只黑猫飞快地逃过露台，嘴里衔着一只黄鸟，<span class="word w-gold" data-note="到这里才发现真凶，开始觉得自己错了。">我开始觉得我是错了</span>！',
+          '隔了几天，<span class="word w-gold" data-note="先有李妈在楼下喊，提醒真凶又出现了。">李妈在楼下叫道：“猫，猫！又来吃鸟了！”</span>同时我看见一只黑猫飞快地逃过露台，嘴里衔着一只黄鸟，<span class="word w-gold" data-note="到这里才发现真凶，开始觉得自己错了。">我开始觉得我是错了</span>！',
           '想到它的无抵抗的逃避，益使我感到我的暴怒、我的虐待，<span class="word w-gold" data-note="比喻，把暴怒和虐待比作针，自责尖锐而持久。">都是针，刺我良心的针！</span>',
-          '我很想补救我的过失，可它不能说话。<span class="word w-purple" data-note="两个月后猫才死在邻家屋脊，我永无改正机会，于是永不养猫。">两个月后，我们的猫忽然死在邻家的屋脊上，自此我家永不养猫</span>。'
+          '我很想补救我的过失，可它不能说话。',
+          '<span class="word w-purple" data-note="两个月后猫才死在邻家屋脊。">两个月后，我们的猫忽然死在邻家的屋脊上</span>，我对于它的亡失，比以前两只猫的亡失，更难过得多。',
+          '<span class="word w-purple" data-note="猫死了，再也没法补救，这才说从此永不养猫。">我永无改正我的过失的机会了！自此，我家永不养猫</span>。'
         ]},
         {t:'cards', items:[
           {front:'对比', back:'三只猫的外形、性情、结局对比，第三只的悲惨更突出。'},
@@ -874,7 +879,9 @@ var LESSONS_G7A = {
         {t:'prose', noteId:'l18-note', paras:[
           '小白鸽和老白鸽在那破烂失修的房脊上<span class="word w-key" data-note="姿态挺拔美好，给老房子添了生机和灵气。">亭亭玉立</span>。',
           '最美好最纯净最圣洁的比喻仍然不过是比喻，仍然不及幼鸽自身的<span class="word w-gold" data-note="任何比喻都不如白鸽本身，赞美生命本来的样子。">本真之美</span>。',
-          '我扬起双手，拍出很响的掌声，激发它们飞翔。两只老白鸽先后起飞，<span class="word w-red" data-note="老白鸽用行动鼓励儿女勇敢起飞，像父母陪着孩子。">两只老白鸽就绕着房子飞过来旋过去，无疑是在鼓励它们的儿女</span>勇敢地起飞。',
+          '我扬起双手，拍出很响的掌声，激发它们飞翔。两只老白鸽先后起飞。',
+          '<span class="word w-gold" data-note="小白鸽飞起来又落下，对第一次飞翔没自信，这是胆怯。">小白鸽飞起来又落下去，似乎对自己能否翱翔蓝天缺乏自信，也许是第一次飞翔的胆怯</span>。',
+          '<span class="word w-red" data-note="老白鸽用绕着房子飞的行动鼓励儿女勇敢起飞，像父母陪着孩子。">两只老白鸽就绕着房子飞过来旋过去，无疑是在鼓励它们的儿女</span>勇敢地起飞。果然，两只小白鸽起飞了，跟着它们的父母彻底离开了屋脊。',
           '这一刻，<span class="word w-purple" data-note="那一刻白鸽承载了所有情感，作者完全陶醉。">世界对我来说就是白鸽</span>。'
         ]},
         {t:'cards', items:[
@@ -914,7 +921,7 @@ var LESSONS_G7A = {
           '当一群大雁冲破了 3 月暖流的雾霭时，<span class="word w-key" data-note="大雁报春，它一来，春天就到了。">春天就来到了</span>。',
           '每次出发之前，都有一场高声而有趣的<span class="word w-gold" data-note="拟人，把大雁的叫声写成辩论、发言，像人一样。">辩论</span>。',
           '孤雁飞行和鸣叫频繁、声调忧郁，人们先有两种猜想：<span class="word w-red" data-note="最初的猜想，两种可能并列。">是伤心的单身，或是寻找失散的子女的父母</span>。',
-          '六年之后，从数字分析发现雁队多是六只或六的倍数，才推断出<span class="word w-red" data-note="六年后的新证据：雁群是家庭，孤雁是丧失亲人的幸存者。">它们是丧失了亲人的幸存者</span>。',
+          '六年之后，从数字分析发现：六只或六的倍数组成的雁队，比偶尔出现的一只（孤雁）多得多，这才推断出<span class="word w-red" data-note="六年后的新证据：雁群是家庭，孤雁是丧失亲人的幸存者。">它们是丧失了亲人的幸存者</span>。',
           '整个大陆所获得的是<span class="word w-purple" data-note="比喻，大雁迁徙给大地带来诗意，只带来好处、没有损害。">从 3 月的天空洒下来的一首有益无损的带着野性的诗歌</span>。',
           '大雁的这种<span class="word w-green" data-note="大雁以家庭为单位、成群联合，人类都不及。">联合观念</span>已经有很长时间了。'
         ]},
@@ -967,9 +974,10 @@ var LESSONS_G7A = {
           {t:'html', h:'<p class="step-hint">先别急着看下文。回头看这两个动作：一个“径去”径直走开，一个“犬坐”像狗一样蹲下。一个走、一个留，各说明什么？</p>'},
           {t:'verse', noteId:'l20-n2', lines:[
             '途中两狼，<span class="word w-red" data-note="紧跟着走，狼早就盯上了屠户。">缀行</span>甚远。',
-            '屠惧，<span class="word w-gold" data-note="屠户害怕，先拿骨头哄狼，可一只停下另一只又跟上，骨头扔光两狼还一起追。">投以骨</span>。骨已尽矣，而两狼之并驱如故。',
+            '屠惧，<span class="word w-gold" data-note="屠户害怕，先拿骨头哄狼。">投以骨</span>。一狼得骨止，一狼仍从。复投之，后狼止而前狼又至。',
+            '骨已尽矣，而两狼之并驱如故。<span style="font-size:.82em;color:var(--muted)">（两次扔骨，一只停下另一只又跟上，骨头扔光，两狼还一起追。）</span>',
             '屠大<span class="word w-key" data-note="处境危急，屠户害怕，担心前后受敌。">窘</span>，恐前后受其<span class="word w-gold" data-note="这里“敌”是攻击，怕前后都被狼攻击。">敌</span>。',
-            '场主积薪其中，<span class="word w-gold" data-note="覆盖、遮盖成小山似的，这就是柴堆。">苫蔽成丘</span>。屠乃奔倚其下，弛担持刀。'
+            '<span class="word w-gold" data-note="“顾”是回头看，屠户看见野地里有个麦场。">顾野有麦场</span>，场主积薪其中，<span class="word w-gold" data-note="覆盖、遮盖成小山似的，这就是柴堆。">苫蔽成丘</span>。屠乃奔倚其下，弛担持刀。'
           ]},
           {t:'html', h:'<p class="step-hint">屠户靠在柴堆旁、持刀对峙。那只走开的狼，到底干嘛去了？</p>'},
           {t:'buttons', buttons:[
@@ -981,7 +989,7 @@ var LESSONS_G7A = {
           {t:'verse', noteId:'l20-n3', lines:[
             '屠<span class="word w-red" data-note="突然。">暴</span>起，以刀劈狼首，又数刀毙之。方欲行，转视积薪后，',
             '一狼<span class="word w-purple" data-note="“洞”这里是动词，在柴堆里打洞。">洞其中</span>，意将<span class="word w-purple" data-note="“隧”这里作状语，从通道钻进去。">隧</span>入以攻其后也。',
-            '身已半入，止露<span class="word w-gold" data-note="尻是屁股，狼身子大半钻进柴堆，只露屁股尾巴。">尻尾</span>。屠自后断其股，亦毙之。'
+            '身已半入，止露<span class="word w-gold" data-note="尻是屁股。“身已半入”是身子钻进去一半，只露屁股尾巴，不是大半。">尻尾</span>。屠自后断其股，亦毙之。'
           ]},
           {t:'html', h:'<p class="step-hint">这就是“径去”的真相。</p><p class="step-hint guess-recall" id="l20-guess-recall"></p>'},
           {t:'choices', id:'l20-rejudge', save:'l20-rejudge', options:[
@@ -1043,7 +1051,7 @@ var LESSONS_G7A = {
           {t:'隐身→灌江口', d:'大圣使隐身法，跑去灌江口假扮小圣'}
         ]},
         {t:'prose', noteId:'l21-note', paras:[
-          '【原文】二郎变饿鹰扑来，<span class="word w-key" data-note="每次都是小圣先变出克制的，大圣见了立刻再变。">大圣见了</span>，搜的一翅飞起去，变做一只大鹚老，冲天而去。',
+          '【原文节录】开头大圣先变麻雀，钉在树上。小圣（二郎神）这才收了法象，摇身一变，变做个饿鹰儿，抖开翅，飞将去扑打。<span class="word w-key" data-note="每一回合都是大圣先变、小圣再变个能克制他的。大圣见饿鹰扑来，立刻又变。">大圣见了</span>，搜的一翅飞起去，变做一只大鹚老，冲天而去。',
           '【原文】只有尾巴不好收拾，竖在后面，<span class="word w-gold" data-note="尾巴变旗杆、还竖在庙后，被二郎神识破。">变做一根旗竿</span>。',
           '【原文】真君撞进门，<span class="word w-red" data-note="假扮对手还耍嘴皮，猴性顽皮。">大圣见了，现出本相道：“郎君不消嚷，庙宇已姓孙了。”</span>',
           '【解读】大圣先变、小圣立刻变出能克制他的，一物降一物，这叫相生相克。',
@@ -1078,17 +1086,17 @@ var LESSONS_G7A = {
       blocks:[
         {t:'timeline', items:[
           {t:'行骗', d:'骗子说蠢人看不见新衣'},
-          {t:'受骗', d:'皇帝怕被说蠢，甘愿上当'},
+          {t:'受骗', d:'皇帝怕被说蠢、怕显得不称职，甘愿上当'},
           {t:'助骗', d:'大臣跟着夸，谁也不点破'},
           {t:'传骗', d:'百姓也跟着称赞新装'},
           {t:'揭骗', d:'小孩先喊“什么也没穿”，后来百姓都说'}
         ]},
         {t:'prose', noteId:'l22-note', paras:[
           '骗子说，<span class="word w-key" data-note="一句话利用了人的虚荣，封住所有人的嘴。">任何不称职的或者愚蠢得不可救药的人，都看不见这衣服</span>。',
-          '“这布是华丽的！精致的！无双的！”每人都<span class="word w-gold" data-note="大家都跟着夸，没有一个人敢先说真话。">随声附和着</span>，每个人都有说不出的快乐。',
-          '一个小孩子最后叫出声来：“<span class="word w-red" data-note="小孩无私无畏，第一个戳穿全场。">可是他什么衣服也没有穿啊</span>！”',
+          '“这布是华丽的！精致的！无双的！”每人都<span class="word w-gold" data-note="大家都跟着夸，没有一个人敢先说真话。">随声附和着</span>。每个人都有说不出的快乐。',
+          '<span class="word w-red" data-note="小孩无私无畏，第一个戳穿全场。">“可是他什么衣服也没有穿啊！”</span>一个小孩子最后叫了出来。',
           '大家私下传播，“<span class="word w-red" data-note="真话传开，最后所有老百姓都跟着说。">他实在没有穿什么衣服啊</span>！”最后所有的老百姓都说。',
-          '皇帝心里想“我必须把游行大典举行完毕”，因此摆出一副<span class="word w-purple" data-note="明知错了还硬撑，讽刺他的虚伪和外强中干。">更骄傲的神气</span>。'
+          '皇帝心里想“<span class="word w-purple" data-note="明知错了还硬撑，讽刺他的虚伪和外强中干。">我必须把这游行大典举行完毕。</span>”因此他摆出一副更骄傲的神气。'
         ]},
         {t:'cards', items:[
           {front:'夸张与想象', back:'不存在的衣服、裸体游行，把荒唐推到极致，却让人觉得真实。'},
@@ -1165,14 +1173,16 @@ var LESSONS_G7A = {
           '家无井而出<span class="word w-gold" data-note="打水浇田，所以常要一个人专门在外。">溉汲</span>，常一人居外。',
           '及其家穿井，告人曰：“<span class="word w-key" data-note="丁家本意是省出一个劳力，话却被人听成井里挖出一个人。">吾穿井得一人</span>。”有闻而传之者曰：“丁氏穿井得一人。”',
           '国人道之，<span class="word w-key" data-note="使宋国国君听到，“闻”是使动用法。">闻之于宋君</span>。',
-          '丁氏对曰：“得一人之<span class="word w-red" data-note="得到一个人的劳力，不是井里挖出一个人。">使</span>，非得一人于井中也。”'
+          '宋君令人问之于丁氏，<span class="word w-gold" data-note="国君没轻信传言，先派人去丁家核实，这才问出真相。">丁氏对曰</span>：“得一人之<span class="word w-red" data-note="得到一个人的劳力，不是井里挖出一个人。">使</span>，非得一人于井中也。”'
         ]},
         {t:'verse', noteId:'l24-n2', lines:[
           '<span style="font-size:.78em;color:var(--muted)">杞人忧天（《列子》）</span>',
           '杞国有人忧天地崩坠，身<span class="word w-gold" data-note="“亡”同“无”，没有地方容身。">亡</span>所寄，废寝食者。',
-          '因往<span class="word w-key" data-note="“晓”是告知、开导。">晓</span>之，曰：“天，积气耳，奈何忧崩坠乎？”',
-          '其人又问日月星宿会不会坠，晓之者答：日月星宿也是积气，<span class="word w-red" data-note="即使掉下来也不会砸伤人。">只使坠，亦不能有所中伤</span>。',
-          '其人再问地坏了怎么办，晓之者答：<span class="word w-red" data-note="地是堆积的土块，到处都塞满，不用担心。">地，积块耳，充塞四虚</span>，奈何忧其坏？',
+          '【原文】因往<span class="word w-key" data-note="“晓”是告知、开导。">晓</span>之，曰：“天，积气耳，亡处亡气。若屈伸呼吸，终日在天中行止，奈何忧崩坠乎？”',
+          '<span style="font-size:.82em;color:var(--muted)">（白话：你弯腰伸展、呼气吸气，整天都在这气里活动，干嘛怕天塌？）</span>',
+          '【原文】其人曰：“天果积气，日月星宿，不当坠耶？”晓之者曰：“日月星宿，亦积气中之<span class="word w-red" data-note="日月星宿是气里会发光的那部分，不是普通的气；就算掉下来也砸不伤人。">有光耀者</span>，只使坠，亦不能有所中伤。”',
+          '【原文】其人曰：“奈地坏何？”晓之者曰：“地，积块耳，充塞四虚，亡处亡块。若躇步跐蹈，终日在地上行止，奈何忧其坏？”',
+          '<span style="font-size:.82em;color:var(--muted)">（白话：你踩踏行走，整天都在地上活动，干嘛怕地陷？）</span>',
           '其人<span class="word w-purple" data-note="消除疑虑的样子，“舍”同“释”。">舍然</span>大喜，<span class="word w-purple" data-note="不只是杞人，开导他的人也放下心、一样欢喜。">晓之者亦舍然大喜</span>。'
         ]},
         {t:'cards', items:[
@@ -1249,14 +1259,15 @@ var EXTRAS_G7A = {
     sections:[
       {title:'语气和语调', lab:'lab-prep', blocks:[
         {t:'dots', items:[
-          '语气：陈述句平稳，疑问句上扬，感叹句带感情。',
-          '语调：轻重缓急，跟着人物的心情走。',
+          '语气：一句话的基本口气，有陈述、疑问、祈使、感叹。',
+          '语调：语音有高低、快慢、长短、轻重的不同。升调（↗）往上扬，降调（↘）往下抑，疑问多上扬、陈述多下抑。',
+          '节奏：把轻重、缓急、顿挫连起来，跟着全篇感情的起伏走。',
           '词语有感情色彩：褒义带夸奖，贬义带批评，中性不偏不倚。'
         ]}
       ]},
       {title:'词语里的感情', lab:'lab-read', blocks:[
         {t:'prose', noteId:'p2-note', paras:[
-          '《秋天的怀念》里，母亲“<span class="word w-key" data-note="“悄悄”躲出去、又“悄悄”进来，重读它，读出母亲的小心翼翼和爱。">悄悄</span>地躲出去”，又“悄悄地回来”。',
+          '《秋天的怀念》里，母亲“<span class="word w-key" data-note="“悄悄”躲出去、又“悄悄”进来，重读它，读出母亲的小心翼翼和爱。">悄悄</span>地躲出去”，等一切恢复沉寂，她又“悄悄地进来”。',
           '一个<span class="word w-gold" data-note="普通的词，放在这儿，写出母亲怕刺激儿子的体贴。">悄悄</span>，比说十句“妈妈很爱你”都更有分量。'
         ]},
         {t:'bigq', q:'从第二单元里再找一个词，说说它带什么感情，你是从哪读出来的。', save:'p2-try'}
@@ -1420,7 +1431,12 @@ var EXTRAS_G7A = {
         ]}
       ]},
       {title:'动手试试', lab:'lab-read', blocks:[
-        {t:'bigq', q:'《回忆我的母亲》按什么顺序写？试着用三句话说出它的思路。', save:'p4-try'}
+        {t:'bigq', q:'《回忆我的母亲》按什么顺序写？试着用三句话说出它的思路。', save:'p4-try'},
+        {t:'prose', noteId:'p4-speech-note', paras:[
+          '教材 p.93 还有一个口头任务：从白求恩、锺太夫人、陈毅里选一位，先弄清他的生平，再以“<span class="word w-key" data-note="横线上填你选的人物，这是要讲给那个人听的演讲。">＿＿，我想对您说</span>”为题，做一次 3 分钟演讲，说说你从他身上学到了什么。',
+          '下面先把演讲要点列出来，再试着讲出声。'
+        ]},
+        {t:'bigq', q:'你选谁？想对他说哪三句话？先写要点，再自己掐 3 分钟讲一遍。', save:'p4-speech'}
       ]}
     ]
   },
@@ -1564,7 +1580,7 @@ var EXTRAS_G7A = {
   'poems-6': {
     eyebrow:'第六单元 · 课外古诗词诵读',
     title:'课外古诗词四首',
-        lead:'同是写秋天，四个诗人处境不同，写出了四种完全不同的心情：有晴空里的乐观，有雨夜的思念，有梦里的报国，有山河间的少年意气。读的时候留意那个“我”。',
+        lead:'四首诗，情境各不相同：有晴空里的乐观，有雨夜的思念，有寒冬梦里的报国，有山河间的少年意气。读的时候留意那个“我”，也留意每首写的是哪个时节。',
     sections:[
       {title:'读一读', lab:'lab-read', blocks:[
         {t:'verse', noteId:'pm6-n1', lines:[
@@ -1579,6 +1595,7 @@ var EXTRAS_G7A = {
         ]},
         {t:'verse', noteId:'pm6-n3', lines:[
           '<span style="font-size:.78em;color:var(--muted)">十一月四日风雨大作（其二）· 陆游</span>',
+          '<span style="font-size:.76em;color:var(--muted)">（农历十一月，已是冬天，不是秋天。）</span>',
           '僵卧孤村<span class="word w-red" data-note="虽困在孤村，却不为自己哀伤，先见气节。">不自哀</span>，尚思为国<span class="word w-key" data-note="“戍轮台”是守卫边疆，到老还想着报国。">戍轮台</span>。',
           '夜阑卧听风吹雨，<span class="word w-gold" data-note="风雨声里梦见战马踏过冰河，把现实和梦连起来。">铁马冰河入梦来</span>。'
         ]},
