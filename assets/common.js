@@ -412,9 +412,8 @@ function bringStepIntoFocus(target){
 function fillGuessRecall(){
   var slot=document.getElementById('l20-guess-recall');
   if(!slot)return;
-  var v;try{v=localStorage.getItem('l20-guess');}catch(e){}
-  var labels={gone:'真走了，不用管',trap:'可能有埋伏',unsure:'证据还不够，先不下结论'};
-  slot.textContent=v?('你刚才猜：'+(labels[v]||v)+'。下面有新证据，可以改主意。')
+  var selected=document.querySelector('#l20-guess .choice[aria-pressed="true"]');
+  slot.textContent=selected?('你刚才猜：'+selected.textContent+'。下面有新证据，可以改主意。')
     :'你第一步还没选，先看下面的线索，回头再选也来得及。';
 }
 
@@ -784,6 +783,7 @@ document.addEventListener('click',function(e){
     if(!on){ch.setAttribute('aria-pressed','true');}
     var sk=group.getAttribute('data-save');
     if(sk){try{localStorage.setItem(sk, on?'':ch.getAttribute('data-v'));}catch(err){}}
+    if(sk==='l20-guess')fillGuessRecall();
     return;
   }
 
@@ -838,6 +838,7 @@ function safeStart(){
   try{
     if(document.body.getAttribute('data-lesson')){renderLesson();}
     else if(document.body.getAttribute('data-extra')){renderExtra();}
+    import('../g7a/skills.js').then(function(module){module.mountRelatedSkills();}).catch(function(){});
   }catch(err){failScreen();}
 }
 safeStart();

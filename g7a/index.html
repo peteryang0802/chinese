@@ -32,6 +32,7 @@
     <p class="lead">六个单元，从四季风景写到想象世界。每课都分三步：先热身、再读懂、最后回味。点任意一课开始。</p>
   </div>
   <div id="resume"></div>
+  <p class="skills-directory-link"><a class="btn ghost" href="skills.html">按方法练 →</a></p>
   <div class="find-box">
     <label for="find-input">找一课</label>
     <input id="find-input" type="search" placeholder="输课号、课题或作者，比如 20、狼、蒲松龄" autocomplete="off">
@@ -111,7 +112,7 @@
         || l.author.toLowerCase().indexOf(q)>=0;
     });
     if(!matches.length){
-      findResults.innerHTML='<p class="find-empty">没找到，换个字试试（可输课号、课题或作者）</p>';
+      findResults.innerHTML='<p class="find-empty">没有匹配的课文。<a href="skills.html?q='+encodeURIComponent(q)+'">试试按方法找 →</a></p>';
     }else{
       findResults.innerHTML=matches.map(function(l){
         return '<a href="'+l.href+'"><span class="ln">'+l.no+'</span><span class="ft">'+l.title+'</span><span class="lau">'+l.author+'</span></a>';
