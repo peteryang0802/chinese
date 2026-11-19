@@ -234,14 +234,19 @@ img,svg{max-width:100%}
 
 /* 翻转卡（字词/修辞，自愿看） */
 .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px;margin-top:12px}
-.flip{perspective:900px;min-height:120px}
+.flip{perspective:900px}
 .flip button{width:100%;min-height:120px;border:1.5px solid var(--line);background:#fbf8ef;border-radius:12px;
-  padding:12px;position:relative;transform-style:preserve-3d;transition:transform .5s;cursor:pointer;text-align:left}
+  padding:0;position:relative;display:grid;grid-template-columns:1fr;transform-style:preserve-3d;
+  transition:transform .5s;cursor:pointer;text-align:left}
 .flip button.flipped{transform:rotateY(180deg)}
-.flip .face{position:absolute;inset:0;padding:14px;backface-visibility:hidden;display:flex;flex-direction:column;justify-content:center}
-.flip .front{font-weight:800;font-size:1.05rem}
+.flip .face{grid-area:1/1;padding:14px;backface-visibility:hidden;display:flex;flex-direction:column;
+  justify-content:center;transition:visibility 0s linear .25s}
+.flip .front{font-weight:800;font-size:1.05rem;visibility:visible}
 .flip .front .hint-tap{font-size:.75rem;color:var(--muted);font-weight:600;margin-top:8px}
-.flip .back{transform:rotateY(180deg);font-size:.86rem;color:var(--ink);background:#f3ecd9;border-radius:12px}
+.flip .back{transform:rotateY(180deg);font-size:.86rem;color:var(--ink);background:#f3ecd9;border-radius:12px;
+  visibility:hidden}
+.flip button.flipped .front{visibility:hidden}
+.flip button.flipped .back{visibility:visible}
 
 /* 按钮三类 */
 .btn{min-height:46px;padding:10px 20px;border-radius:11px;border:1.5px solid #9aa69a;background:var(--card);
@@ -316,9 +321,9 @@ img,svg{max-width:100%}
   .speak-btn,.save-tip,.read-actions,.bring-btn{display:none !important}
   .app-root,.wrap,.lesson-stage{padding:0;margin:0;max-width:100%}
   .panel,.card,.flip{border:1px solid #999;box-shadow:none;background:#fff;break-inside:avoid}
-  .flip .back{position:static;transform:none;display:block;visibility:visible;opacity:1;
+  .flip button{display:block;transform:none}
+  .flip .face{grid-area:auto;display:block;visibility:visible;transform:none;
     background:#fff;color:#000;break-inside:avoid}
-  .flip .front{display:block}
   .lead,.big-q,.guess-ask,.verse,.orig,.read-p{color:#000}
   .section-wrap{display:block !important}
   .answer-box{border:1px solid #999;background:#fff;min-height:60px;display:block}
