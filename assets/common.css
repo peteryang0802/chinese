@@ -376,3 +376,195 @@ img,svg{max-width:100%}
   font-weight: 750;
   text-underline-offset: .18em;
 }
+
+/* A consistent reading palette across lessons and skill practice. */
+:root {
+  --learning-material: #e8f1fb;
+  --learning-material-ink: #244a70;
+  --learning-material-line: #4f7ba8;
+  --learning-question: #f1eaf6;
+  --learning-question-ink: #563e70;
+  --learning-question-line: #8867a7;
+  --learning-correct: #e6f2e7;
+  --learning-correct-ink: #1e563d;
+  --learning-correct-line: #478161;
+  --learning-retry: #fbefdd;
+  --learning-retry-ink: #7a410f;
+  --learning-retry-line: #a7662b;
+  --learning-action: #205b48;
+}
+
+.guided-learning .site-head { padding-block: 8px; }
+.guided-learning .site-head .row { justify-content: space-between; }
+.learning-directory {
+  color: inherit;
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  text-underline-offset: .23em;
+}
+
+.guided-flow { max-width: 54rem; }
+.guided-flow .page-head { padding-block: 18px 10px; }
+.guided-flow .page-head h1 {
+  font-family: inherit;
+  line-height: 1.28;
+  font-size: clamp(1.6rem, 4vw, 2.15rem);
+}
+.guided-flow .lead { max-width: 46rem; }
+
+.learning-navigation {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0 12px;
+  margin-bottom: 18px;
+  border-bottom: 1px solid var(--line);
+  color: var(--muted);
+  font-size: .88rem;
+}
+.learning-navigation > p { padding-block: 10px; }
+.learning-navigation details > ol {
+  margin-top: 0;
+  padding-inline-start: 1.6em;
+}
+.learning-navigation summary, .learning-extra > summary, .learning-inline > summary,
+.guided-flow .lesson-skills-disclosure > summary {
+  min-height: 44px;
+  align-content: center;
+  width: fit-content;
+  cursor: pointer;
+  color: var(--learning-material-ink);
+  font-weight: 650;
+}
+.learning-navigation button {
+  display: block;
+  min-height: 44px;
+  padding: 5px;
+  border: 0;
+  background: transparent;
+  font-size: inherit;
+  text-align: start;
+  text-decoration: underline;
+  text-underline-offset: .2em;
+  cursor: pointer;
+}
+.learning-navigation button[aria-current="step"] { color: var(--ink); font-weight: 750; }
+.guided-flow .section-label {
+  display: block;
+  margin: 0 0 10px;
+  color: var(--ink);
+  font-size: clamp(1.15rem, 2.4vw, 1.38rem);
+  line-height: 1.4;
+}
+.guided-flow .section-label::before { display: none; }
+.guided-flow .section-wrap > .panel { padding: 0; border: 0; background: transparent; }
+.learning-core h2, .learning-recap .section-label, .guided-flow .big-q {
+  color: var(--learning-question-ink);
+}
+.learning-core > ol, .learning-recap {
+  max-width: 46rem;
+  margin: 0;
+  border-inline-start: 3px solid var(--learning-question-line);
+  background: var(--learning-question);
+  border-radius: 0 10px 10px 0;
+  padding: 12px 16px;
+}
+.learning-core > ol {
+  padding-inline-start: 2.8rem;
+  font-size: clamp(1.07rem, 2.2vw, 1.22rem);
+}
+.learning-core > ol li::marker { color: var(--learning-question-ink); font-weight: 750; }
+.learning-core > ol li + li { margin-block-start: 8px; }
+.learning-extra, .learning-inline { margin-block: 8px; }
+.guided-flow .learning-core [data-post] { display: none; }
+.learning-material, .guided-flow .note-line, .guided-flow .gloss-hint,
+.guided-flow .verse, .guided-flow .cmp-panel, .guided-flow .lesson-evidence {
+  background: var(--learning-material);
+  border-inline-start: 3px solid var(--learning-material-line);
+  border-radius: 0 8px 8px 0;
+}
+.learning-material, .guided-flow .verse { padding: 10px 14px; }
+.learning-material, .guided-flow .note-line, .guided-flow .gloss-hint {
+  color: var(--learning-material-ink);
+}
+.guided-flow .lab-read .panel > .prose,
+.guided-flow .section-wrap .panel > .dot-list,
+.guided-flow .lab-read .panel > .timeline {
+  background: var(--learning-material);
+  padding: 8px 14px;
+  border-inline-start: 3px solid var(--learning-material-line);
+  border-radius: 0 8px 8px 0;
+}
+.guided-flow .lab-read .panel > .timeline { padding-inline-start: 26px; }
+.guided-flow .panel > .prose + .prose,
+.guided-flow .panel > .verse + .verse { margin-block-start: 12px; }
+.guided-flow .choice { border-color: #9aa69a; }
+.guided-flow .choice[aria-pressed="true"], .guided-flow .cmp-tab[aria-pressed="true"] {
+  background: var(--learning-material);
+  color: var(--learning-material-ink);
+  border-color: var(--learning-material-line);
+  box-shadow: inset 0 0 0 1px var(--learning-material-line);
+}
+.guided-flow .save-tip:not([hidden]), .guided-flow .save-fail:not([hidden]) {
+  width: fit-content;
+  padding: 4px 8px;
+  border-inline-start: 2px solid var(--learning-correct-line);
+  color: var(--learning-correct-ink);
+  background: var(--learning-correct);
+}
+.guided-flow .save-fail:not([hidden]) {
+  border-color: var(--learning-retry-line);
+  color: var(--learning-retry-ink);
+  background: var(--learning-retry);
+}
+.guided-flow .big-q ~ .big-q { margin-block-start: 20px; }
+.guided-flow .learning-inline { margin-block: 0 4px; }
+.guided-flow .lesson-skills-disclosure { margin-block: 12px 0; }
+.guided-flow .lesson-skills {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  margin: 0;
+  padding: 0;
+}
+.guided-flow .lesson-skills a {
+  background: transparent;
+  border: 0;
+  text-decoration: underline;
+  text-underline-offset: .2em;
+}
+.learning-controls { margin-block-start: 22px; }
+.learning-controls:has(> [hidden] + [hidden]) { margin: 0; }
+.learning-action, .guided-flow .btn.primary, .guided-flow .lesson-evidence .return-to-skill {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 8px 16px;
+  border: 1px solid var(--learning-action);
+  border-radius: 8px;
+  background: var(--learning-action);
+  color: white;
+  font-weight: 750;
+  text-decoration: none;
+  cursor: pointer;
+}
+.learning-action:hover, .guided-flow .btn.primary:hover { background: #164535; }
+.guided-flow .section-label[tabindex="-1"]:focus { outline: none; }
+
+@media print {
+  .learning-navigation, .learning-controls, .learning-directory, .learning-extra,
+  .lesson-skills-disclosure { display: none; }
+  .guided-flow [data-learning-pane] { display: block !important; }
+}
+
+.guided-flow .learning-core .section-label { color: var(--learning-question-ink); }
+.guided-flow .btn[data-bring] {
+  padding-inline: 0;
+  border: 0;
+  color: var(--learning-material-ink);
+  background: transparent;
+  text-decoration: underline;
+  text-underline-offset: .2em;
+}

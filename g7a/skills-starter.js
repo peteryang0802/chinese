@@ -77,9 +77,12 @@ export function mountStarter(root, { narrativeHref, themeHref, transferHref }) {
         <p class="walk-evidence walk-result"></p>
         <div class="walk-followups">
           <a class="walk-primary walk-center">用这件事读懂文章中心 →</a>
-          <a class="walk-secondary walk-transfer">换一段，试同一个方法</a>
-          <a class="walk-secondary walk-narrative">回七上记叙方法</a>
-          <button type="button" class="walk-restart">重新练这两步</button>
+          <details class="walk-other">
+            <summary>其他练习</summary>
+            <a class="walk-secondary walk-transfer">换一段，试同一个方法</a>
+            <a class="walk-secondary walk-narrative">回七上记叙方法</a>
+            <button type="button" class="walk-restart">重新练这两步</button>
+          </details>
         </div>`;
       stageNode.querySelector('.walk-result').textContent = walkSummary;
       stageNode.querySelector('.walk-center').href = centerUrl(themeHref);
@@ -104,7 +107,7 @@ export function mountStarter(root, { narrativeHref, themeHref, transferHref }) {
     buttons.forEach((button, index) => button.addEventListener('click', () => {
       const choice = question.choices[index];
       buttons.forEach((option, i) => option.setAttribute('aria-pressed', String(i === index)));
-      feedback.textContent = choice.reply;
+      feedback.textContent = (choice.correct ? '选对了。' : '再想一步。') + choice.reply;
       feedback.classList.toggle('is-correct', Boolean(choice.correct));
       next.hidden = !choice.correct;
     }));

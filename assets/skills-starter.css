@@ -105,3 +105,21 @@
   cursor: pointer;
 }
 .walk-back { padding-inline: 0; }
+
+.walk-card h2 { color: var(--learning-question-ink); }
+.walk-evidence {
+  background: var(--learning-material);
+  color: var(--learning-material-ink);
+  border-color: var(--learning-material-line);
+}
+.walk-feedback:not(:empty) {
+  background: var(--learning-retry);
+  color: var(--learning-retry-ink);
+  border-inline-start: 3px solid var(--learning-retry-line);
+}
+.walk-feedback.is-correct {
+  background: var(--learning-correct);
+  color: var(--learning-correct-ink);
+  border-inline-start-color: var(--learning-correct-line);
+}
+.walk-other summary { min-height: 44px; align-content: center; cursor: pointer; color: var(--learning-material-ink); }

@@ -24,19 +24,6 @@ function buildSequence(){
   return seq;
 }
 
-/* 通用 pager：上一项 / 目录 / 下一项，都写具体标题，含拓展 */
-function renderPager(currentHref){
-  var seq=buildSequence();
-  var i=seq.findIndex(function(s){return s.href===currentHref;});
-  var prev=i>0?seq[i-1]:null, next=i>=0&&i<seq.length-1?seq[i+1]:null;
-  function side(item,dir){
-    if(!item)return '<span class="pager-placeholder" aria-hidden="true"></span>';
-    return '<a href="'+item.href+'">'+(dir==='prev'?'← ':'')+item.title+(dir==='next'?' →':'')+'</a>';
-  }
-  return '<nav class="pager" aria-label="上一项或下一项">'
-    +side(prev,'prev')+'<a href="index.html">七上目录</a>'+side(next,'next')+'</nav>';
-}
-
 /* 记录最近一次访问的页面，供目录“继续上次”和定位单元用 */
 function markVisited(href){
   try{localStorage.setItem('g7a-last',href);}catch(e){}
@@ -70,12 +57,13 @@ function renderButton(b){
   return '<button class="'+cls.trim()+'"'+attr+'>'+b.label+'</button>';
 }
 
-function renderBlock(b){
+function renderBlock(b, material){
+  var nearby=material||'';
   switch(b.t){
     case 'step':
       return '<section class="step"'+(b.id?' id="'+b.id+'"':'')+(b.hidden?' hidden':'')+'>'
         +(b.title?'<h3 class="step-title">'+b.title+'</h3>':'')
-        +b.blocks.map(renderBlock).join('')+'</section>';
+        +b.blocks.map(function(block){return renderBlock(block);}).join('')+'</section>';
     case 'compare':
       var ctabs=b.options.map(function(o,i){
         return '<button type="button" class="cmp-tab" data-cmp="'+b.id+'" data-v="'+o.v+'" aria-pressed="'+(i===0)+'">'+o.label+'</button>';
@@ -89,7 +77,7 @@ function renderBlock(b){
       var tdAskId=b.id+'-ask';
       var tdAsk=b.ask?'<p class="guess-ask" id="'+tdAskId+'">'+b.ask+'</p>':'';
       return '<div class="two-draft" id="'+b.id+'">'
-        +tdAsk
+        +tdAsk+nearby
         +'<div class="draft-grid">'
         +'<div class="draft-col"><span class="draft-label" id="'+b.id+'-l1">初稿</span>'
         +'<textarea class="answer-box" data-save="'+b.save1+'" aria-labelledby="'+(b.ask?tdAskId+' ':'')+b.id+'-l1" placeholder="先把想法写下来，不用求好"></textarea></div>'
@@ -141,7 +129,7 @@ function renderBlock(b){
       }).join('')+'</div>';
     case 'bigq':
       var qid='bq-'+b.save;
-      return '<p class="big-q" id="'+qid+'">'+b.q+'</p>'
+      return '<p class="big-q" id="'+qid+'">'+b.q+'</p>'+nearby
         +'<textarea class="answer-box" data-save="'+b.save+'" aria-labelledby="'+qid+'" placeholder="'+placeholderFor(b.q,b.ph)+'"></textarea>'
         +'<p class="save-tip" hidden>已保存在本浏览器</p>';
     case 'choices':
@@ -171,154 +159,224 @@ function placeholderFor(q, ph){
   return '把想法写在这，只有你自己看得到';
 }
 
-function renderSection(sec, labClass, wrapId){
-  if(!sec) return '';
-  return '<div class="section-wrap '+labClass+'"'+(wrapId?' id="'+wrapId+'"':'')+'>'
-    +'<h2 class="section-label">'+sec.title+'</h2>'
-    +'<div class="panel">'+sec.blocks.map(renderBlock).join('')+'</div></div>';
+function renderSection(sec, labClass, id, material){
+  if(!sec)return '';
+  var question=sec.blocks.findIndex(function(block){return block.t==='bigq'||block.t==='twodraft';});
+  return '<section data-learning-pane class="section-wrap '+labClass+'" id="'+id+'" hidden>'
+    +'<h2 class="section-label" tabindex="-1">'+sec.title+'</h2>'
+    +'<div class="panel">'+sec.blocks.map(function(block,index){
+      var content=renderBlock(block,index===question?material:undefined);
+      if(block.t==='cards'&&sec.blocks.length>1){
+        content='<details class="learning-extra"><summary>看词句与写法提示</summary>'+content+'</details>';
+      }
+      return content;
+    }).join('')+'</div></section>';
 }
 
-/* ---------- 页面骨架 ---------- */
 function headHTML(){
   return '<a class="skip" href="#main">跳到正文</a>'
-  +'<header class="site-head"><div class="wrap row">'
-  +'<a class="brand" href="../index.html">'
-  +'<svg class="logo" viewBox="0 0 34 34" aria-hidden="true"><rect width="34" height="34" rx="8" fill="#f4ecd8"/>'
-  +'<path d="M9 8h16v18H9z" fill="#1d2a33"/><path d="M17 8v18" stroke="#f4ecd8" stroke-width="1.4"/></svg>'
-  +'我的语文书房</a>'
-  +'<span class="crumb"><a href="../index.html">书架</a> / <a href="index.html">七上</a> / 课文</span>'
-  +'</div></header>';
+    +'<header class="site-head"><div class="wrap row"><span class="brand">'
+    +'<svg class="logo" viewBox="0 0 34 34" aria-hidden="true"><rect width="34" height="34" rx="8" fill="#f4ecd8"/>'
+    +'<path d="M9 8h16v18H9z" fill="#1d2a33"/><path d="M17 8v18" stroke="#f4ecd8" stroke-width="1.4"/></svg>'
+    +'我的语文书房</span><a class="learning-directory" href="index.html">七上目录</a></div></header>';
+}
+
+function renderCore(guide, prep){
+  return '<section id="sec-prep" class="learning-core" data-learning-pane hidden>'
+    +'<h2 class="section-label" tabindex="-1">带着这两个问题学</h2>'
+    +'<ol>'+guide.slice(0,2).map(function(question){return '<li>'+escapeHtml(question)+'</li>';}).join('')+'</ol>'
+    +(prep?'<details class="learning-extra"><summary>先做个热身（可选）</summary>'
+      +'<div class="learning-material">'+prep.blocks.filter(function(block){
+        return block.t!=='buttons'||block.buttons.some(function(button){return !button.post;});
+      }).map(function(block){return renderBlock(block);}).join('')+'</div></details>':'')
+    +'</section>';
+}
+
+function renderLearningNavigation(stages){
+  return '<div class="learning-navigation"><p id="learning-position"></p>'
+    +'<details id="learning-jump"><summary>本课步骤</summary><ol>'
+    +stages.map(function(stage){
+      return '<li><button type="button" data-learning-go="'+stage.id+'">'+escapeHtml(stage.title)+'</button></li>';
+    }).join('')+'</ol></details></div>';
+}
+
+function renderLearningControls(href){
+  var seq=buildSequence();
+  var index=seq.findIndex(function(item){return item.href===href;});
+  var next=index>=0?seq[index+1]:null;
+  return '<div class="learning-controls">'
+    +'<button id="learning-next" type="button" data-learning-go="" class="learning-action" hidden></button>'
+    +'<a id="learning-finish" href="'+(next?next.href:'index.html')+'" class="learning-action" hidden>'
+    +(next?'下一项 · '+escapeHtml(next.title)+' →':'回七上目录 →')+'</a></div>';
+}
+
+var learningStages=[];
+var learningIndex=0;
+var learningPath='';
+
+function mountLearning(title, eyebrow, lead, stages, sections, href){
+  var root=document.createElement('div');
+  root.className='app-root';
+  root.innerHTML=headHTML()
+    +'<main id="main" class="wrap lesson-stage guided-flow">'
+    +'<div class="page-head"><div class="eyebrow">'+eyebrow+'</div><h1>'+title+'</h1>'
+    +(lead?'<p class="lead">'+lead+'</p>':'')+'</div>'
+    +renderLearningNavigation(stages)+sections+renderLearningControls(href)+'</main>'
+    +'<footer class="foot wrap">我的语文书房 · 七年级上册</footer>';
+  document.body.classList.add('guided-learning');
+  document.body.appendChild(root);
+  learningPath=href;
+  learningStages=stages;
+  restoreSaved();
+  enhanceA11y();
+  restoreStepState();
+  fillGuessRecall();
+
+  var stored='';
+  try{stored=localStorage.getItem('g7a-learning-stage:'+href)||'';}catch(e){}
+  var linked=learningHash();
+  activateLearningStage(linked||stored||stages[0].id,Boolean(linked),false);
+}
+
+function learningHash(){
+  var id=location.hash.slice(1);
+  return learningStages.some(function(stage){return stage.id===id;})?id:'';
+}
+
+function activateLearningStage(id, focus, updateUrl){
+  var index=learningStages.findIndex(function(stage){return stage.id===id;});
+  learningIndex=Math.max(0,index);
+  var stage=learningStages[learningIndex];
+  if(!stage)return;
+  document.querySelectorAll('[data-learning-pane]').forEach(function(pane){pane.hidden=pane.id!==stage.id;});
+  document.querySelectorAll('#learning-jump button').forEach(function(button){
+    if(button.dataset.learningGo===stage.id)button.setAttribute('aria-current','step');
+    else button.removeAttribute('aria-current');
+  });
+  el('learning-jump').open=false;
+  el('learning-position').textContent='第 '+(learningIndex+1)+' / '+learningStages.length+' 步 · '+stage.title;
+  try{localStorage.setItem('g7a-learning-stage:'+learningPath,stage.id);}catch(e){}
+  if(updateUrl)history.replaceState(null,'','#'+stage.id);
+  updateLearningAction();
+  if(focus){
+    var heading=el(stage.id).querySelector('.section-label');
+    if(heading)heading.focus({preventScroll:true});
+  }
+  window.scrollTo(0,0);
+}
+
+function updateLearningAction(){
+  if(!learningStages.length)return;
+  var current=el(learningStages[learningIndex].id);
+  var linkedReturn=current.querySelector('.lesson-evidence .return-to-skill');
+  var required=null;
+  current.querySelectorAll('.btn.primary[data-show]').forEach(function(button){
+    var target=document.querySelector(button.getAttribute('data-show'));
+    var step=button.closest('.step');
+    var available=target&&target.hidden&&(!step||!step.closest('[hidden]'));
+    button.hidden=!available||Boolean(required)||Boolean(linkedReturn);
+    if(!button.hidden)required=button;
+  });
+  var next=learningStages[learningIndex+1];
+  var nextButton=el('learning-next');
+  nextButton.hidden=Boolean(required)||Boolean(linkedReturn)||!next;
+  if(next){
+    nextButton.dataset.learningGo=next.id;
+    nextButton.textContent=next.action+' →';
+  }
+  el('learning-finish').hidden=Boolean(required)||Boolean(linkedReturn)||Boolean(next);
+}
+
+window.addEventListener('hashchange',function(){
+  var linked=learningHash();
+  if(linked)activateLearningStage(linked,true,false);
+});
+
+var longerReadings={
+  l1: [[5,'先看春天的画面'],[4,'回到春草的语言']],
+  l4: [[1,'读《观沧海》'],[1,'读《次北固山下》'],[1,'读《闻王昌龄左迁龙标遥有此寄》'],[1,'读《天净沙·秋思》']],
+  l8: [[2,'读《咏雪》'],[2,'读《陈太丘与友期行》']],
+  l12: [[3,'读第一至三章'],[3,'读第四至六章'],[3,'读第七至九章'],[4,'读第十至十二章']],
+  l15: [[2,'读小序和第一首'],[1,'读第二首'],[2,'读第三首']],
+  l24: [[1,'读两则外国寓言'],[1,'读《穿井得一人》'],[2,'读《杞人忧天》']]
+};
+
+function renderReading(id, reading, stages){
+  var groups=longerReadings[id]||[[reading.blocks.length,'带着问题读']];
+  var offset=0;
+  return groups.map(function(group,index){
+    var stageId=index===0?'sec-read':'sec-read-'+(index+1);
+    var blocks=reading.blocks.slice(offset,offset+group[0]);
+    offset+=group[0];
+    stages.push({id:stageId,title:group[1],action:group[1]});
+    return renderSection({title:groups.length===1?reading.title:group[1],blocks:blocks},'lab-read',stageId);
+  }).join('');
 }
 
 function renderLesson(){
-  var id=document.body.getAttribute('data-lesson');
-  if(typeof LESSONS==='undefined'||!LESSONS){failScreen();return;}
-  var L=LESSONS[id];
-  if(!L){document.body.innerHTML='<p class="wrap" style="padding:40px">这一课还在准备中。</p>';return;}
+  var id=document.body.dataset.lesson;
+  var lesson=LESSONS&&LESSONS[id];
+  if(!lesson||!BOOK){failScreen();return;}
+  var current=BOOK.units.flatMap(function(unit){return unit.lessons;}).find(function(item){return item.id===id;});
+  var href='lesson-'+pad(current.no)+'.html';
+  markVisited(href);
+  try{localStorage.setItem('g7a-last-title',current.title);}catch(e){}
+  document.title=current.title+' · 我的语文书房';
+  setMetaDesc('七年级上册《'+current.title+'》逐步学习。带着核心问题读课文，用材料练，再回顾方法。');
 
-  var all=[];
-  BOOK.units.forEach(function(u){u.lessons.forEach(function(l){all.push(l);});});
-  var idx=all.findIndex(function(l){return l.id===id;});
-  var cur=all[idx];
-  var curHref='lesson-'+pad(cur.no)+'.html';
-  var pager=renderPager(curHref);
-  markVisited(curHref);
-  try{localStorage.setItem('g7a-last-title',cur.title);}catch(e){}
-
-  document.documentElement.lang='zh-CN';
-  document.title=cur.title+' · 我的语文书房';
-  var lessonTitle=(cur.title.indexOf('《')>=0)?cur.title:'《'+cur.title+'》';
-  setMetaDesc('七年级上册'+lessonTitle+'预习复习：先热身、再读懂、最后回味，跟着原文一步步练。');
-  var inPageNav='<nav class="inpage-nav" aria-label="本课环节">'
-    +'<a href="#sec-prep" data-stage="pre" data-target="sec-prep">预习</a>'
-    +'<a href="#sec-read" data-stage="post" data-target="sec-read">读课文</a>'
-    +'<a href="#sec-back" data-stage="post" data-target="sec-back">课后</a></nav>';
-  var appRoot=document.createElement('div');
-  appRoot.className='app-root';
-  appRoot.innerHTML=headHTML()
-    +'<main id="main" class="wrap lesson-stage">'
-    +'<div class="page-head"><div class="eyebrow">'+(L.kind||cur.type||'课文')+' · '+ (cur.author||L.author||'')+'</div>'
-    +'<h1>'+cur.title+'</h1>'+(L.lead?'<p class="lead">'+L.lead+'</p>':'')+'</div>'
-    +inPageNav
-    +renderSection(L.prep,'lab-prep','sec-prep')
-    +renderSection(L.read,'lab-read','sec-read')
-    +renderSection(L.back,'lab-back','sec-back')
-    +pager+'</main>'
-    +'<footer class="foot wrap">我的语文书房 · 课前预习 · 课后复习</footer>';
-  document.body.appendChild(appRoot);
-
-  restoreSaved();
-  enhanceA11y();
-  var hadOpenSteps=restoreStepState();
-  fillGuessRecall();
-  var hashStage=stageFromHash();
-  if(hashStage){try{localStorage.setItem('g7a-mode',hashStage.mode);}catch(e){}}
-  applyMode(getMode());
-  if(hashStage){
-    var hashTarget=document.getElementById(hashStage.id);
-    if(hashTarget){hashTarget.scrollIntoView({block:'start'});}
-    setActiveStage(hashStage.id);
-  }else if(hadOpenSteps){
-    var openSteps=document.querySelectorAll('.step:not([hidden])');
-    var lastOpen=openSteps[openSteps.length-1];
-    if(lastOpen){lastOpen.scrollIntoView({block:'start'});}
-    setActiveStage(getMode()==='pre'?'sec-prep':'sec-read');
-  }else{
-    window.scrollTo(0,0);
-    setActiveStage(getMode()==='pre'?'sec-prep':'sec-read');
-  }
+  var guide=FLOW_GUIDES_G7A[id];
+  var stages=[{id:'sec-prep',title:'核心问题'}];
+  var reading=renderReading(id,lesson.read,stages);
+  var evidence=renderInlineMaterial(guide[2]);
+  var practice=lesson.back.blocks.map(function(block,index){
+    var first=index===0;
+    var stageId=first?'sec-back':'sec-back-'+(index+1);
+    var title=first?'用课文练一练':'换个角度试一试';
+    stages.push({id:stageId,title:title,action:title});
+    return renderSection({title:first?lesson.back.title:title,blocks:[block]},'lab-back',stageId,
+      first||id==='l4'?evidence:undefined);
+  }).join('');
+  stages.push({id:'sec-recap',title:'回顾方法',action:'回顾这课的方法'});
+  var sections=renderCore(guide,lesson.prep)+reading+practice
+    +'<section class="learning-recap" id="sec-recap" data-learning-pane hidden>'
+    +'<h2 class="section-label" tabindex="-1">把方法带走</h2><p>'+escapeHtml(guide[3])+'</p></section>';
+  var author=current.author||lesson.author;
+  var eyebrow=(lesson.kind||current.type||'课文')+(author?' · '+author:'');
+  mountLearning(current.title,eyebrow,lesson.lead,stages,sections,href);
 }
 
-/* 深链：URL 里的 #sec-xx 优先于本地记住的模式 */
-function stageFromHash(){
-  var map={'#sec-prep':{mode:'pre',id:'sec-prep'},'#sec-read':{mode:'post',id:'sec-read'},'#sec-back':{mode:'post',id:'sec-back'}};
-  return map[location.hash||'']||null;
-}
-function setActiveStage(targetId){
-  document.querySelectorAll('.inpage-nav a').forEach(function(a){
-    a.setAttribute('aria-current',a.getAttribute('data-target')===targetId?'true':'false');
-  });
-}
-
-/* ---------- 课前 / 课后模式 ---------- */
-function getMode(){
-  var m; try{m=localStorage.getItem('g7a-mode');}catch(e){}
-  return (m==='post'||m==='pre')?m:'pre';
-}
-function applyMode(mode){
-  var pre=document.querySelector('.lab-prep');
-  var post=document.querySelectorAll('.lab-read,.lab-back');
-  if(mode==='post'){
-    if(pre)pre.hidden=true;
-    post.forEach(function(s){s.hidden=false;});
-  }else{
-    if(pre)pre.hidden=false;
-    post.forEach(function(s){s.hidden=true;});
-  }
-}
-
-/* ---------- 拓展板块（实践/写作/专题/整本书/课外诗词） ---------- */
-function extraHeadHTML(){
-  return '<a class="skip" href="#main">跳到正文</a>'
-  +'<header class="site-head"><div class="wrap row">'
-  +'<a class="brand" href="../index.html">'
-  +'<svg class="logo" viewBox="0 0 34 34" aria-hidden="true"><rect width="34" height="34" rx="8" fill="#f4ecd8"/>'
-  +'<path d="M9 8h16v18H9z" fill="#1d2a33"/><path d="M17 8v18" stroke="#f4ecd8" stroke-width="1.4"/></svg>'
-  +'我的语文书房</a>'
-  +'<span class="crumb"><a href="../index.html">书架</a> / <a href="index.html">七上</a> / 拓展</span>'
-  +'</div></header>';
+function renderInlineMaterial(clue){
+  return '<details class="learning-inline"><summary>看答题线索</summary>'
+    +'<p class="learning-material">'+escapeHtml(clue)+'</p></details>';
 }
 
 function renderExtra(){
-  var key=document.body.getAttribute('data-extra');
-  if(typeof EXTRAS_G7A==='undefined'||!EXTRAS_G7A){failScreen();return;}
-  var X=EXTRAS_G7A[key];
-  if(!X){document.body.innerHTML='<p class="wrap" style="padding:40px">这个板块还在准备中。</p>';return;}
-
-  var secs=(X.sections||[]).map(function(s){
-    return renderSection({title:s.title, blocks:s.blocks}, s.lab||'lab-prep');
+  var key=document.body.dataset.extra;
+  var extra=typeof EXTRAS_G7A!=='undefined'&&EXTRAS_G7A[key];
+  if(!extra){failScreen();return;}
+  var href=key+'.html';
+  markVisited(href);
+  try{localStorage.setItem('g7a-last-title',extra.title);}catch(e){}
+  document.title=extra.title+' · 我的语文书房';
+  setMetaDesc('七年级上册'+extra.title+'：跟着任务动手练。');
+  var stages=[{id:'sec-prep',title:'核心问题'}];
+  var guide=FLOW_GUIDES_G7A[key];
+  var sections=extra.sections.flatMap(function(section){
+    var first=section.blocks.findIndex(function(block){return block.t==='bigq';});
+    var second=section.blocks.findIndex(function(block,index){return index>first&&block.t==='bigq';});
+    if(second<0)return [section];
+    return [
+      {...section,blocks:section.blocks.slice(0,second)},
+      {...section,title:'用这个办法再练一个任务',blocks:section.blocks.slice(second)}
+    ];
+  }).map(function(section,index){
+    var id='sec-task-'+(index+1);
+    stages.push({id:id,title:section.title,action:section.title});
+    var clue=guide[2]?renderInlineMaterial(guide[2]):undefined;
+    return renderSection(section,section.lab||'lab-read',id,clue);
   }).join('');
-  var back=renderPager(key+'.html');
-  markVisited(key+'.html');
-  try{localStorage.setItem('g7a-last-title',X.title);}catch(e){}
-
-  document.documentElement.lang='zh-CN';
-  document.title=X.title+' · 我的语文书房';
-  var extraTitle=(X.title.indexOf('《')>=0)?X.title:'《'+X.title+'》';
-  setMetaDesc('七年级上册拓展板块'+extraTitle+'：跟着任务动手练，本地保存进度。');
-  var extraRoot=document.createElement('div');
-  extraRoot.className='app-root';
-  extraRoot.innerHTML=extraHeadHTML()
-    +'<main id="main" class="wrap lesson-stage">'
-    +'<div class="page-head"><div class="eyebrow">'+(X.eyebrow||'拓展板块')+'</div>'
-    +'<h1>'+X.title+'</h1>'+(X.lead?'<p class="lead">'+X.lead+'</p>':'')+'</div>'
-    +secs+back+'</main>'
-    +'<footer class="foot wrap">我的语文书房 · 课前预习 · 课后复习</footer>';
-  document.body.appendChild(extraRoot);
-
-  restoreSaved();
-  enhanceA11y();
-  window.scrollTo(0,0);
+  sections=renderCore(guide)+sections;
+  mountLearning(extra.title,extra.eyebrow||'拓展板块',extra.lead,stages,sections,href);
 }
 
 /* ---------- 本地保存恢复 ---------- */
@@ -706,25 +764,9 @@ document.addEventListener('click',function(e){
     return;
   }
 
-  // 统一三阶段导航：切模式 + 滚动定位 + 焦点 + 可复制地址
-  var stageLink=node.closest('.inpage-nav a[data-stage]');
-  if(stageLink){
-    e.preventDefault();
-    var stageMode=stageLink.getAttribute('data-stage');
-    var targetId=stageLink.getAttribute('data-target');
-    try{localStorage.setItem('g7a-mode',stageMode);}catch(err){}
-    applyMode(stageMode);
-    setActiveStage(targetId);
-    var stageTarget=document.getElementById(targetId);
-    if(stageTarget){
-      stageTarget.scrollIntoView({behavior:'smooth',block:'start'});
-      var label=stageTarget.querySelector('.section-label');
-      if(label){
-        if(!label.hasAttribute('tabindex'))label.setAttribute('tabindex','-1');
-        setTimeout(function(){try{label.focus({preventScroll:true});}catch(err){}},200);
-      }
-    }
-    try{history.replaceState(null,'','#'+targetId);}catch(err){}
+  var stageButton=node.closest('[data-learning-go]');
+  if(stageButton){
+    activateLearningStage(stageButton.dataset.learningGo,true,true);
     return;
   }
 
@@ -790,12 +832,6 @@ document.addEventListener('click',function(e){
   // 通用显示/隐藏/揭示/切换
   var act=node.closest('[data-show],[data-hide],[data-reveal],[data-toggle],[data-post]');
   if(act){
-    if(act.hasAttribute('data-post')){
-      try{localStorage.setItem('g7a-mode','post');}catch(err){}
-      applyMode('post');
-      setActiveStage('sec-read');
-      try{history.replaceState(null,'','#sec-read');}catch(err){}
-    }
     var firstShown=null;
     if(act.getAttribute('data-show')){
       document.querySelectorAll(act.getAttribute('data-show')).forEach(function(x){
@@ -816,6 +852,7 @@ document.addEventListener('click',function(e){
       document.querySelectorAll(parts[0]).forEach(function(x){x.classList.toggle(parts[1]);});
     }
     saveStepState();
+    updateLearningAction();
     if(firstShown&&firstShown.classList.contains('step'))bringStepIntoFocus(firstShown);
   }
 });
@@ -838,7 +875,9 @@ function safeStart(){
   try{
     if(document.body.getAttribute('data-lesson')){renderLesson();}
     else if(document.body.getAttribute('data-extra')){renderExtra();}
-    import('../g7a/skills.js').then(function(module){module.mountRelatedSkills();}).catch(function(){});
+    import('../g7a/skills.js?v=quiet1').then(function(module){
+      return module.mountRelatedSkills();
+    }).then(updateLearningAction).catch(function(){});
   }catch(err){failScreen();}
 }
 safeStart();

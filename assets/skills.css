@@ -184,3 +184,67 @@
 }
 .skill-original p, .skill-history p { white-space: pre-wrap; overflow-wrap: anywhere; }
 .skill-reused { background: #edf4e9; overflow-wrap: anywhere; }
+
+.guided-skill { max-width: 54rem; }
+.guided-skill .page-head h1 { font-family: inherit; font-size: clamp(1.6rem, 4vw, 2.15rem); }
+.guided-skill .skill-stage-menu a, .guided-skill summary { color: var(--learning-material-ink); }
+.guided-skill .skill-stage-menu a { display: block; min-height: 44px; align-content: center; }
+.guided-skill .skill-stage-menu a[aria-current="step"] { color: var(--ink); font-weight: 750; }
+.guided-skill .skill-section.panel, .guided-skill .skill-task.panel {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+.guided-skill .skill-task-progress { color: var(--muted); margin-bottom: 8px; }
+.guided-skill :is(.skill-quick legend, .skill-question, .skill-review h4) {
+  color: var(--learning-question-ink);
+}
+.guided-skill .skill-inline-material, .guided-skill .skill-support { margin: 6px 0; }
+.guided-skill .skill-inline-material > summary, .guided-skill .skill-support > summary {
+  min-height: 44px;
+  align-content: center;
+  width: fit-content;
+  cursor: pointer;
+  font-weight: 650;
+}
+.guided-skill .skill-material {
+  color: var(--learning-material-ink);
+  background: var(--learning-material);
+  border-color: var(--learning-material-line);
+}
+.guided-skill .skill-inline-material > a { font-size: .9rem; color: var(--learning-material-ink); }
+.guided-skill .skill-quick[data-result] {
+  --answer-fill: var(--learning-retry);
+  --answer-ink: var(--learning-retry-ink);
+  --answer-line: var(--learning-retry-line);
+}
+.guided-skill .skill-quick[data-result="correct"] {
+  --answer-fill: var(--learning-correct);
+  --answer-ink: var(--learning-correct-ink);
+  --answer-line: var(--learning-correct-line);
+}
+.guided-skill .skill-option-feedback:not(:empty), .guided-skill .skill-options button[aria-pressed="true"] {
+  color: var(--answer-ink);
+  background: var(--answer-fill);
+  border-color: var(--answer-line);
+}
+.guided-skill .skill-option-feedback:not(:empty) { border-inline-start: 3px solid var(--answer-line); }
+.guided-skill a.skill-button { display: inline-flex; align-items: center; text-decoration: none; }
+.guided-skill [data-recall-next] { margin-top: 12px; }
+.guided-skill .skill-hint {
+  background: var(--learning-material);
+  color: var(--learning-material-ink);
+  border-inline-start: 3px solid var(--learning-material-line);
+}
+.guided-skill .skill-review > h4,
+.guided-skill .skill-revision-status:not(:empty) { font-weight: 750; }
+.guided-skill :is(.skill-support button, .skill-support a) { margin-inline-end: 6px; }
+
+.guided-skill #recall > .skill-source {
+  padding: 8px 12px;
+  border-inline-start: 3px solid var(--learning-material-line);
+  border-radius: 0 8px 8px 0;
+  color: var(--learning-material-ink);
+  background: var(--learning-material);
+}
