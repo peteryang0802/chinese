@@ -204,12 +204,13 @@ function renderSection(sec, labClass, id, material){
     }).join('')+'</div></section>';
 }
 
-function headHTML(){
+function headHTML(href){
+  var directoryHref='index.html#entry-'+href.replace(/\.html$/,'');
   return '<a class="skip" href="#main">跳到正文</a>'
     +'<header class="site-head"><div class="wrap row"><span class="brand">'
     +'<svg class="logo" viewBox="0 0 34 34" aria-hidden="true"><rect width="34" height="34" rx="8" fill="#f4ecd8"/>'
     +'<path d="M9 8h16v18H9z" fill="#1d2a33"/><path d="M17 8v18" stroke="#f4ecd8" stroke-width="1.4"/></svg>'
-    +'我的语文书房</span><a class="learning-directory" href="index.html">七上目录</a></div></header>';
+    +'我的语文书房</span><a class="learning-directory" href="'+directoryHref+'">← 七上目录</a></div></header>';
 }
 
 var learningAnswers={};
@@ -284,7 +285,7 @@ var learningPath='';
 function mountLearning(title, eyebrow, lead, stages, sections, href){
   var root=document.createElement('div');
   root.className='app-root';
-  root.innerHTML=headHTML()
+  root.innerHTML=headHTML(href)
     +'<main id="main" class="wrap lesson-stage guided-flow">'
     +'<div class="page-head"><div class="eyebrow">'+eyebrow+'</div><h1>'+title+'</h1>'
     +(lead?'<p class="lead">'+lead+'</p>':'')+'</div>'
@@ -997,7 +998,7 @@ function safeStart(){
   try{
     if(document.body.getAttribute('data-lesson')){renderLesson();}
     else if(document.body.getAttribute('data-extra')){renderExtra();}
-    import('../g7a/skills.js?v=desktop1').then(function(module){
+    import('../g7a/skills.js?v=directory1').then(function(module){
       return module.mountRelatedSkills();
     }).then(updateLearningAction).catch(function(){});
   }catch(err){failScreen();}

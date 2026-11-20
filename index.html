@@ -7,100 +7,91 @@
 <meta name="theme-color" content="#1d2a33">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%231d2a33'/%3E%3Cpath d='M8 9h16v15H8z' fill='%23f4ecd8'/%3E%3Cpath d='M16 9v15' stroke='%231d2a33' stroke-width='1.5'/%3E%3C/svg%3E">
 <link rel="stylesheet" href="assets/common.css">
+<link rel="stylesheet" href="assets/directory.css?v=1">
 </head>
 <body>
 <a class="skip" href="#main">跳到正文</a>
 
 <header class="site-head">
-  <div class="wrap row">
-    <a class="brand" href="index.html">
+  <div class="wrap row directory-header">
+    <span class="brand">
       <svg class="logo" viewBox="0 0 34 34" aria-hidden="true">
         <rect width="34" height="34" rx="8" fill="#f4ecd8"/>
         <path d="M9 8h16v18H9z" fill="#1d2a33"/>
         <path d="M17 8v18" stroke="#f4ecd8" stroke-width="1.4"/>
       </svg>
       我的语文书房
-    </a>
-    <span class="crumb">初中语文 · 六册书架</span>
+    </span>
   </div>
 </header>
 
-<main id="main" class="wrap">
+<main id="main" class="wrap directory-page">
   <div class="page-head">
-    <div class="eyebrow">课前预习 · 课后复习 · 读懂文字里的门道</div>
-    <h1>选一本书，进去看看</h1>
-    <p class="lead">从七年级上册开始。你可以跟着课文读，也可以选一个想练的方法。</p>
-    <p class="skills-directory-link"><a class="btn ghost" href="g7a/skills.html">七上 · 按方法练 →</a></p>
+    <h1>初中语文</h1>
   </div>
-
-  <div id="home-resume"></div>
-
-  <div class="books">
-    <a class="book" href="g7a/index.html">
-      <span class="spine" style="background:var(--u1)"></span>
-      <div class="term">七年级 · 上册</div>
-      <div class="name serif">四季之景到想象之翼</div>
-      <div class="meta">6 个单元 · 24 篇课文 · 写作与整本书阅读</div>
-      <div class="go-link" style="color:var(--u1)">进入七上 →</div>
-    </a>
-
-    <div class="book locked" aria-disabled="true">
-      <span class="spine" style="background:var(--u2)"></span>
-      <div class="term">七年级 · 下册</div>
-      <div class="name serif">在路上</div>
-      <div class="meta">还没摆上书架，先把上册读好</div>
-      <div class="go-link">即将上架</div>
+  <section class="directory-available" aria-labelledby="available-volume">
+    <h2 id="available-volume">七年级上册</h2>
+    <p>六个单元，含课文、写作和整本书阅读。</p>
+    <div class="directory-actions">
+      <div id="home-resume" hidden></div>
+      <a class="learning-action" id="enter-directory" href="g7a/index.html">进入七上目录 →</a>
+      <a class="directory-secondary" href="g7a/skills.html">按方法练</a>
     </div>
+  </section>
 
-    <div class="book locked" aria-disabled="true">
-      <span class="spine" style="background:var(--u3)"></span>
-      <div class="term">八年级 · 上册</div>
-      <div class="name serif">在路上</div>
-      <div class="meta">还没摆上书架</div>
-      <div class="go-link">即将上架</div>
-    </div>
-
-    <div class="book locked" aria-disabled="true">
-      <span class="spine" style="background:var(--u4)"></span>
-      <div class="term">八年级 · 下册</div>
-      <div class="name serif">在路上</div>
-      <div class="meta">还没摆上书架</div>
-      <div class="go-link">即将上架</div>
-    </div>
-
-    <div class="book locked" aria-disabled="true">
-      <span class="spine" style="background:var(--u5)"></span>
-      <div class="term">九年级 · 上册</div>
-      <div class="name serif">在路上</div>
-      <div class="meta">还没摆上书架</div>
-      <div class="go-link">即将上架</div>
-    </div>
-
-    <div class="book locked" aria-disabled="true">
-      <span class="spine" style="background:var(--u6)"></span>
-      <div class="term">九年级 · 下册</div>
-      <div class="name serif">在路上</div>
-      <div class="meta">还没摆上书架</div>
-      <div class="go-link">即将上架</div>
-    </div>
-  </div>
+  <details class="directory-other">
+    <summary>其他暂未开放的册次</summary>
+    <ul>
+      <li>七年级下册</li>
+      <li>八年级上册、下册</li>
+      <li>九年级上册、下册</li>
+    </ul>
+  </details>
 </main>
 
-<footer class="foot wrap">我的语文书房 · 一个专属于你的语文角落</footer>
+<footer class="foot wrap">我的语文书房</footer>
 
 <script>
 (function(){
-  var last,title;
-  try{last=localStorage.getItem('g7a-last');title=localStorage.getItem('g7a-last-title');}catch(e){}
-  if(last){
-    var label=title;
-    if(!label){
-      var lm=String(last).match(/lesson-(\d+)\.html/);
-      label=lm?('第'+parseInt(lm[1],10)+'课'):'上次的课文';
+  var data;
+  var slot=document.getElementById('home-resume');
+  var entry=document.getElementById('enter-directory');
+
+  function updateResume(){
+    var last;
+    try{last=localStorage.getItem('g7a-last');}catch(e){}
+    slot.hidden=true;
+    slot.replaceChildren();
+    entry.className='learning-action';
+    entry.textContent='进入七上目录 →';
+    if(!last)return;
+    if(!window.BOOK_G7A){
+      if(!data){
+        data=document.createElement('script');
+        data.src='g7a/data.js?v=desktop1';
+        data.addEventListener('load',updateResume);
+        document.head.append(data);
+      }
+      return;
     }
-    document.getElementById('home-resume').innerHTML=
-      '<a class="resume-btn" href="g7a/'+last+'">继续上次：'+label+' →</a>';
+    var units=window.BOOK_G7A.units;
+    var lesson=units.flatMap(function(unit){return unit.lessons;}).find(function(item){
+      return 'lesson-'+String(item.no).padStart(2,'0')+'.html'===last;
+    });
+    var extra=units.flatMap(function(unit){return unit.extras;}).find(function(item){return item.href===last;});
+    if(!lesson&&!extra)return;
+    var resume=document.createElement('a');
+    resume.className='learning-action';
+    resume.href='g7a/'+last;
+    resume.textContent='继续上次：'+(lesson?.title??extra.label)+' →';
+    slot.append(resume);
+    slot.hidden=false;
+    entry.className='directory-secondary';
+    entry.textContent='查看七上目录';
   }
+
+  updateResume();
+  window.addEventListener('pageshow',function(event){if(event.persisted)updateResume();});
 })();
 </script>
 <script type="module">

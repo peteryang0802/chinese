@@ -7,167 +7,65 @@
 <meta name="theme-color" content="#1d2a33">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%231d2a33'/%3E%3Cpath d='M8 9h16v15H8z' fill='%23f4ecd8'/%3E%3Cpath d='M16 9v15' stroke='%231d2a33' stroke-width='1.5'/%3E%3C/svg%3E">
 <link rel="stylesheet" href="../assets/common.css">
+<link rel="stylesheet" href="../assets/directory.css?v=1">
 <link rel="stylesheet" href="../assets/parent-settings.css?v=1">
 </head>
 <body>
 <a class="skip" href="#main">跳到正文</a>
 
 <header class="site-head">
-  <div class="wrap row">
-    <a class="brand" href="../index.html">
+  <div class="wrap row directory-header">
+    <span class="brand">
       <svg class="logo" viewBox="0 0 34 34" aria-hidden="true">
         <rect width="34" height="34" rx="8" fill="#f4ecd8"/>
         <path d="M9 8h16v18H9z" fill="#1d2a33"/>
         <path d="M17 8v18" stroke="#f4ecd8" stroke-width="1.4"/>
       </svg>
       我的语文书房
-    </a>
-    <span class="crumb"><a href="../index.html">书架</a> / 七年级上册</span>
+    </span>
+    <a class="learning-directory" href="../index.html">← 语文书架</a>
   </div>
 </header>
 
-<main id="main" class="wrap">
+<main id="main" class="wrap directory-page">
   <div class="page-head">
-    <div class="eyebrow">统编版（人教版）2024 · 七年级上册</div>
+    <div class="eyebrow">统编版（人教版）2024</div>
     <h1>七年级上册</h1>
-    <p class="lead">六个单元，从四季风景写到想象世界。先看核心问题，再带着问题读课文、练方法。</p>
   </div>
-  <div id="resume"></div>
-  <p class="skills-directory-link"><a class="btn ghost" href="skills.html">按方法练 →</a></p>
-  <div class="find-box">
-    <label for="find-input">找一课</label>
-    <input id="find-input" type="search" placeholder="输课号、课题或作者，比如 20、狼、蒲松龄" autocomplete="off">
-    <div id="find-results" class="find-results" hidden></div>
+  <div id="resume" class="directory-actions">
+    <a id="resume-entry" class="learning-action" hidden></a>
+    <a class="directory-secondary" href="skills.html">按方法练</a>
   </div>
-  <nav id="unit-jump" class="unit-jump" aria-label="跳到各单元"></nav>
-  <div id="toc"></div>
+
+  <div class="directory-layout">
+    <nav id="unit-jump" class="directory-units" aria-label="单元目录" hidden></nav>
+    <div class="directory-content">
+      <form class="directory-search" role="search">
+        <label for="find-input">找课文或活动</label>
+        <input id="find-input" type="search" placeholder="输入课号、题目或作者，例如 6、散步、莫怀戚" autocomplete="off">
+      </form>
+      <div id="find-results" aria-labelledby="results-title" hidden>
+        <h2 id="results-title">搜索结果</h2>
+        <p id="find-count" role="status"></p>
+        <ul id="find-matches" class="directory-entries"></ul>
+        <div id="find-empty" class="directory-empty" hidden>
+          <p>没有找到对应的课文或活动。</p>
+          <button id="find-clear" class="learning-action" type="button">返回单元目录</button>
+        </div>
+      </div>
+      <div id="toc"><p role="status">正在加载七上目录……</p></div>
+      <noscript>请开启 JavaScript 查看本册目录。</noscript>
+    </div>
+  </div>
 </main>
 
 <footer class="foot wrap">
-  我的语文书房 · 课前预习 · 课后复习
+  我的语文书房
   <div id="chinese-parent-settings" hidden></div>
 </footer>
 
 <script src="data.js?v=desktop1"></script>
+<script src="course-directory.js?v=1"></script>
 <script type="module" src="../assets/chinese-records.js?v=2"></script>
-<script>
-(function(){
-  if(typeof BOOK_G7A==='undefined'||!BOOK_G7A){
-    document.getElementById('toc').innerHTML=
-      '<div class="boot-error" style="padding:24px"><p>目录数据没加载出来，可能是网络断了一下。</p>'
-      +'<p><button type="button" class="btn solid" onclick="location.reload()">重新加载</button>'
-      +'<a class="btn ghost" href="../index.html">回书架</a></p></div>';
-    return;
-  }
-  function pad(n){return (n<10?'0':'')+n;}
-  function hrefOfLesson(l){return 'lesson-'+pad(l.no)+'.html';}
-  var html='';
-  BOOK_G7A.units.forEach(function(u){
-    html+='<section class="unit" id="unit-'+u.id+'" style="--uc:'+u.color+'">'
-      +'<div class="unit-head" style="background:'+u.color+'">'
-      +'<span class="no">'+pad(u.id)+'</span>'
-      +'<span class="utitle">'+u.title+'</span>'
-      +'<span class="utheme">'+u.theme+'</span></div><div class="lessons">';
-    u.lessons.forEach(function(l){
-      html+='<a class="lesson-item" href="'+hrefOfLesson(l)+'">'
-        +'<span class="ln">'+l.no+'</span>'
-        +'<span class="lt">'+l.title+(l.star?'<span class="lstar">（自读）</span>':'')+'</span>'
-        +'<span class="tag-type" style="background:'+u.color+'1f;color:'+u.color+'">'+l.type+'</span>'
-        +'<span class="lau">'+l.author+'</span></a>';
-    });
-    html+='</div><div class="extra">';
-    u.extras.forEach(function(x){
-      html+='<a href="'+x.href+'">'+x.label+'</a>';
-    });
-    html+='</div></section>';
-  });
-  document.getElementById('toc').innerHTML=html;
-
-  /* 顶部单元快捷跳转：六个胶囊，窄屏可横向滑动 */
-  var jumpHtml=BOOK_G7A.units.map(function(u){
-    return '<a href="#unit-'+u.id+'" style="--uc:'+u.color+'">'+pad(u.id)+' '+u.title+'</a>';
-  }).join('');
-  document.getElementById('unit-jump').innerHTML=jumpHtml;
-
-  /* 找一课：按课号、课题或作者实时匹配，不用先猜在哪个单元 */
-  var allLessons=[];
-  BOOK_G7A.units.forEach(function(u){
-    u.lessons.forEach(function(l){
-      allLessons.push({no:l.no,title:l.title,author:l.author||'',href:hrefOfLesson(l)});
-    });
-  });
-  var findInput=document.getElementById('find-input');
-  var findResults=document.getElementById('find-results');
-  /* 归一化：全角数字转半角，去掉“第”“课”，让“第20课”“20课”“２０”都能当课号找 */
-  function normalizeQuery(raw){
-    var s=raw.toLowerCase().replace(/[\uFF10-\uFF19]/g,function(ch){
-      return String.fromCharCode(ch.charCodeAt(0)-0xFEE0);
-    });
-    var num=s.replace(/第/g,'').replace(/课/g,'').replace(/\s/g,'');
-    return {text:s.trim(),num:num};
-  }
-  findInput.addEventListener('input', function(){
-    var nq=normalizeQuery(findInput.value);
-    var q=nq.text;
-    if(!q){findResults.hidden=true;findResults.innerHTML='';return;}
-    var matches=allLessons.filter(function(l){
-      return String(l.no)===nq.num
-        || String(l.no)===q
-        || l.title.toLowerCase().indexOf(q)>=0
-        || l.author.toLowerCase().indexOf(q)>=0;
-    });
-    if(!matches.length){
-      findResults.innerHTML='<p class="find-empty">没有匹配的课文。<a href="skills.html?q='+encodeURIComponent(q)+'">试试按方法找 →</a></p>';
-    }else{
-      findResults.innerHTML=matches.map(function(l){
-        return '<a href="'+l.href+'"><span class="ln">'+l.no+'</span><span class="ft">'+l.title+'</span><span class="lau">'+l.author+'</span></a>';
-      }).join('');
-    }
-    findResults.hidden=false;
-  });
-
-  /* 点胶囊平滑滚动，并把锚点写进地址栏，不触发默认跳动 */
-  document.getElementById('unit-jump').addEventListener('click', function(ev){
-    var a=ev.target.closest('a');
-    if(!a) return;
-    ev.preventDefault();
-    var box=document.querySelector(a.getAttribute('href'));
-    if(box){
-      box.scrollIntoView({behavior:'smooth',block:'start'});
-      if(history.replaceState){history.replaceState(null,'',a.getAttribute('href'));}
-    }
-  });
-
-  /* 找某个页面属于哪个单元、叫什么 */
-  function locate(href){
-    var found=null;
-    BOOK_G7A.units.forEach(function(u){
-      var l=u.lessons.filter(function(x){return hrefOfLesson(x)===href;})[0];
-      var ex=u.extras.filter(function(x){return x.href===href;})[0];
-      if(l)found={unit:u.id,title:l.title};
-      else if(ex)found={unit:u.id,title:ex.label};
-    });
-    return found;
-  }
-
-  var last;
-  try{last=localStorage.getItem('g7a-last');}catch(e){}
-  if(last){
-    var info=locate(last);
-    document.getElementById('resume').innerHTML=
-      '<a class="resume-btn" href="'+last+'">继续上次：'+(info?info.title:last)+' →</a>';
-    if(info&&!location.hash){
-      var box=document.getElementById('unit-'+info.unit);
-      /* 只给上次单元加金色高亮，不自动滚走：找课框和续读留在顶部当前可见处，
-         想回到上次可点续读按钮，或自己滚到高亮单元 */
-      if(box){box.classList.add('unit-last');}
-    }
-  }
-  if(location.hash){
-    var h=document.querySelector(location.hash);
-    if(h){h.scrollIntoView();}
-  }
-})();
-</script>
 </body>
 </html>

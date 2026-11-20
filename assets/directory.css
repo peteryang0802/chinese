@@ -1,0 +1,120 @@
+.site-head .directory-header { justify-content: space-between; }
+.directory-page { padding-bottom: 18px; }
+.directory-page .page-head h1, .skills-hub .page-head h1 { font-family: inherit; }
+.directory-page .page-head { padding-bottom: 14px; }
+.directory-available {
+  max-width: 48rem;
+  padding: 18px 20px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--card);
+}
+.directory-available h2 { font-size: 1.2rem; }
+.directory-available p { color: var(--muted); }
+.directory-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 18px;
+  align-items: center;
+  margin-block: 10px 16px;
+}
+.directory-available .directory-actions { margin-bottom: 0; }
+.directory-secondary {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  color: var(--learning-action);
+  text-underline-offset: .2em;
+}
+.directory-other { margin-top: 14px; color: var(--muted); }
+.directory-other summary {
+  min-height: 44px;
+  align-content: center;
+  width: fit-content;
+  cursor: pointer;
+}
+.directory-other ul { margin-inline-start: 18px; }
+.directory-layout {
+  padding-block-start: 16px;
+  border-block-start: 1px solid var(--line);
+}
+.directory-units { margin-bottom: 16px; }
+.directory-units h2 { font-size: .96rem; color: var(--muted); }
+.directory-units ol {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  margin: 6px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.directory-units a {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 6px 10px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  color: var(--muted);
+  text-decoration: none;
+}
+.directory-units a:hover { text-decoration: underline; }
+.directory-units a[aria-current] {
+  border-color: var(--learning-question-line);
+  background: var(--learning-question);
+  color: var(--learning-question-ink);
+  font-weight: 750;
+}
+.directory-content { min-width: 0; }
+.directory-search { max-width: 34rem; margin-bottom: 16px; }
+.directory-search label { display: block; margin-bottom: 5px; font-weight: 700; }
+.directory-search input {
+  width: 100%;
+  min-height: 44px;
+  padding: 8px 12px;
+  border: 1px solid #9a9383;
+  border-radius: 8px;
+  background: var(--card);
+  color: var(--ink);
+  font: inherit;
+}
+.directory-unit-theme, #find-count { color: var(--muted); margin-bottom: 8px; }
+.directory-unit h2, #find-results h2 { font-size: 1.17rem; }
+.directory-unit h3 { font-size: .98rem; margin-top: 14px; }
+.directory-entries { max-width: 52rem; margin-top: 5px; }
+.directory-entries a {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  gap: 8px;
+  padding: 6px 10px;
+  color: var(--ink);
+  font-weight: 680;
+  text-decoration: none;
+  border-block-end: 1px solid var(--line);
+}
+.directory-entries a:hover { background: var(--card); text-decoration: underline; }
+.directory-number, .directory-author, .directory-self { color: var(--muted); font-size: .83rem; }
+.directory-number { flex: 0 0 1.4em; }
+.directory-author { margin-inline-start: auto; font-weight: 400; text-align: end; }
+.directory-self { margin-inline-start: 5px; font-weight: 400; }
+.directory-empty .learning-action { margin-top: 8px; }
+@media (min-width: 900px) and (min-height: 501px) and (orientation: landscape) {
+  .directory-layout {
+    display: grid;
+    grid-template-columns: 12.8rem minmax(0,1fr);
+  }
+  .directory-content {
+    border-inline-start: 1px solid var(--line);
+    padding-inline-start: clamp(18px,2.5vw,32px);
+  }
+  .directory-units {
+    position: sticky;
+    top: 16px;
+    align-self: start;
+    margin: 0;
+    padding-inline-end: 16px;
+  }
+  .directory-units ol { display: grid; gap: 3px; }
+  .directory-units a[aria-current] { border-color: transparent transparent transparent var(--learning-question-line); }
+}

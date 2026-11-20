@@ -57,15 +57,21 @@ const escapeHtml = (value) => String(value ?? '').replace(/[&<>"']/g, (character
 const lessonNumber = (number) => String(number).padStart(2, '0');
 function lessonUrl(number, skillId, taskId) {
   const file = 'lesson-' + lessonNumber(number) + '.html';
-  const back = skillId && taskId ? '?' + new URLSearchParams({ fromSkill: skillId, fromTask: taskId }) : '';
-  return file + back + '#sec-read';
+  if (!skillId || !taskId) return file + '#sec-read';
+  const back = new URLSearchParams({ fromSkill: skillId, fromTask: taskId });
+  const query = new URLSearchParams(location.search).get('backq');
+  if (query) back.set('methodQuery', query);
+  return file + '?' + back + '#sec-read';
 }
 const skillUrl = (id) => 'skills.html?skill=' + encodeURIComponent(id);
 const lessonTitle = (number) => window.BOOK_G7A?.units
   .flatMap((unit) => unit.lessons).find((lesson) => lesson.no === number)?.title ?? ('第 ' + number + ' 课');
 const legacyId = (entry, index) => 'lesson-' + lessonNumber(entry.lesson) + '-' + (index + 1);
 const exerciseId = (entry, index) => entry.id ?? legacyId(entry, index);
-const entryUrl = (id, entry, index) => skillUrl(id) + '&lesson=' + entry.lesson + '#' + exerciseId(entry, index);
+function entryUrl(id, entry, index, query) {
+  const search = query ? '&backq=' + encodeURIComponent(query) : '';
+  return skillUrl(id) + '&lesson=' + entry.lesson + search + '#' + exerciseId(entry, index);
+}
 const hasText = (value) => typeof value === 'string' && Boolean(value.trim());
 const resumeKey = 'g7a-skills-resume-v2';
 
@@ -152,50 +158,89 @@ function bindReload(root) {
 }
 
 function renderHome(root, query) {
-  const resume = lastExercise();
+  root.classList.add('skills-hub');
+  setSkillsHeader('index.html', '七上目录');
   root.innerHTML = `
     <div class="page-head">
       <div class="eyebrow">七年级上册</div>
       <h1>按方法练</h1>
       <p class="lead">每次选一个方法。先做一道小题，再到课文里试一次。</p>
-      <div class="skill-actions">
-        ${resume ? '<a class="skill-start skill-button" href="' + escapeHtml(resume.href)
-          + '">继续上次 · ' + escapeHtml(resume.title) + '</a>' : ''}
-        <a class="skill-start ${resume ? 'skill-secondary' : 'skill-button'}" href="skills.html?start=walk">第一次来，先试一道记事题 →</a>
-      </div>
+      <div class="skill-actions" id="practice-entry" tabindex="-1"></div>
     </div>
-    <div class="skill-lookup">
+    <form class="skill-lookup" role="search">
       <label for="skill-query">你想练什么？</label>
       <input id="skill-query" type="search" autocomplete="off" placeholder="比如 六要素、分段、标点">
-    </div>
+    </form>
     <p class="skill-count" role="status"></p>
     ${incompleteContent() ? retryMarkup('有些方法暂时没打开，下面的练习可以先做。') : ''}
     <div class="skill-grid"></div>
-    <p class="skill-tail"><a href="index.html">按课文找 →</a></p>`;
+    <button class="skill-button" type="button" data-skill-clear hidden>查看全部方法</button>`;
   const search = root.querySelector('#skill-query');
   const grid = root.querySelector('.skill-grid');
   const count = root.querySelector('.skill-count');
+  const start = root.querySelector('#practice-entry');
+  const clear = root.querySelector('[data-skill-clear]');
   search.value = query;
+  function renderStart() {
+    const resume = lastExercise();
+    let walkStage = null;
+    try { walkStage = localStorage.getItem('g7a-skills-v1:walk-starter'); } catch {}
+    const starterLabel = walkStage === '1' || walkStage === '2' ? '继续《散步》开场练习' : '先试一道记事题';
+    start.innerHTML = (resume ? '<a class="skill-start skill-button" href="' + escapeHtml(resume.href)
+      + '">继续上次 · ' + escapeHtml(resume.title) + ' →</a>' : '')
+      + '<a class="skill-start ' + (resume ? 'skill-text-link' : 'skill-button')
+      + '" href="skills.html?start=walk">' + starterLabel + ' →</a>';
+  }
   function renderMatches() {
+    const raw = search.value.trim();
     const terms = searchTerms(search.value);
-    const matching = terms.length ? skills.filter((skill) => searchMatches(skill, terms)) : skills;
-    const listed = matching.length ? matching : skills.slice(0, 3);
-    grid.innerHTML = listed.map((skill) => {
+    const matching = raw ? skills.filter((skill) => searchMatches(skill, terms)) : skills;
+    grid.innerHTML = matching.map((skill) => {
       const progress = transferStatus(skill);
-      return `<a class="skill-card" href="${skillUrl(skill.id)}">
+      const href = skillUrl(skill.id) + (raw ? '&backq=' + encodeURIComponent(raw) : '');
+      return `<a class="skill-card" id="method-${skill.id}" href="${escapeHtml(href)}">
         <strong>${escapeHtml(skill.name)}</strong>
         <span>${escapeHtml(skill.goal)}</span>
         ${progress ? '<small>' + escapeHtml(progress) + '</small>' : ''}
       </a>`;
     }).join('');
-    count.textContent = matching.length
-      ? (terms.length ? '找到 ' + matching.length + ' 个方法。' : '')
-      : '暂时没找到相同的问法。可以先试下面的方法。';
+    count.textContent = raw
+      ? (matching.length ? '找到 ' + matching.length + ' 个方法。' : '没有找到相符的方法。')
+      : '';
+    start.hidden = Boolean(raw);
+    clear.hidden = !raw || matching.length > 0;
   }
-  search.addEventListener('input', renderMatches);
+  function updateQuery() {
+    const url = new URL(location.href);
+    if (search.value.trim()) url.searchParams.set('q', search.value.trim());
+    else url.searchParams.delete('q');
+    url.hash = '';
+    history.replaceState(null, '', url);
+    renderMatches();
+  }
+  search.addEventListener('input', updateQuery);
+  search.form.addEventListener('submit', event => {
+    event.preventDefault();
+    if (grid.children.length === 1) grid.querySelector('a').click();
+  });
+  clear.addEventListener('click', () => {
+    search.value = '';
+    updateQuery();
+    search.focus();
+  });
   bindReload(root);
-  window.addEventListener('pageshow', renderMatches);
+  window.addEventListener('pageshow', event => {
+    if (event.persisted) {
+      const focused = document.activeElement?.id;
+      renderStart();
+      renderMatches();
+      if (focused?.startsWith('method-')) document.getElementById(focused)?.focus({ preventScroll: true });
+    }
+  });
+  renderStart();
   renderMatches();
+  const target = location.hash.slice(1);
+  if (target === 'practice-entry' || target.startsWith('method-')) document.getElementById(target)?.focus();
 }
 
 function quickQuestion(data, key, nextId) {
@@ -513,13 +558,24 @@ function waitForWrites(root) {
   });
 }
 
-function usePracticeHeader() {
+function setSkillsHeader(href, label) {
   const header = document.querySelector('.site-head');
   document.body.classList.add('guided-learning');
-  const brand = header.querySelector('.brand');
-  brand.removeAttribute('href');
   const crumb = header.querySelector('.crumb');
-  crumb.innerHTML = '<a class="learning-directory" href="skills.html">← 方法目录</a>';
+  const link = document.createElement('a');
+  link.className = 'learning-directory';
+  link.href = href;
+  link.textContent = '← ' + label;
+  crumb.replaceChildren(link);
+}
+
+function usePracticeHeader(skillId) {
+  const url = new URL('skills.html', location.href);
+  const query = new URLSearchParams(location.search).get('backq');
+  if (query) url.searchParams.set('q', query);
+  url.hash = skillId ? 'method-' + skillId : 'practice-entry';
+  setSkillsHeader(url.href, '方法目录');
+  return url.href;
 }
 
 function renderDetail(root, skill, selectedLesson, reusedSummary = '') {
@@ -537,7 +593,7 @@ function renderDetail(root, skill, selectedLesson, reusedSummary = '') {
     { id: 'transfer', title: '换新材料再试' }];
   document.title = skill.name + ' · 我的语文书房';
   root.classList.add('guided-skill');
-  usePracticeHeader();
+  const directory = usePracticeHeader(skill.id);
   root.innerHTML = `
     <div class="page-head">
       <h1>${escapeHtml(skill.name)}</h1>
@@ -578,6 +634,7 @@ function renderDetail(root, skill, selectedLesson, reusedSummary = '') {
   bindQuick(root, skill.recall, recallKey, () => remember(skill.id, 'recall'));
   entries.forEach((entry, index) => bindExercise(root, entry, taskIds[index], skill.id, legacyId(entry, index)));
   bindExercise(root, skill.transfer, 'transfer-task', skill.id);
+  root.querySelector('#transfer [data-action=continue]').href = directory;
   waitForWrites(root);
 
   const rail = root.querySelector('.learning-rail');
@@ -630,6 +687,7 @@ export async function mountRelatedSkills() {
   const params = new URLSearchParams(location.search);
   const fromSkill = params.get('fromSkill');
   const fromTask = params.get('fromTask');
+  const methodQuery = params.get('methodQuery');
   const sourceSkill = matching.find((skill) => skill.id === fromSkill);
   const taskIndex = sourceSkill?.entries.findIndex((entry, index) => entry.lesson === lesson
     && (exerciseId(entry, index) === fromTask || legacyId(entry, index) === fromTask)) ?? -1;
@@ -639,7 +697,7 @@ export async function mountRelatedSkills() {
     const evidence = document.createElement('section');
     evidence.className = 'panel lesson-evidence';
     evidence.innerHTML = '<h3>刚才那道题的证据</h3><p>' + escapeHtml(task.source) + '</p>'
-      + evidenceList(task) + '<a class="return-to-skill" href="' + escapeHtml(entryUrl(sourceSkill.id, task, taskIndex))
+      + evidenceList(task) + '<a class="return-to-skill" href="' + escapeHtml(entryUrl(sourceSkill.id, task, taskIndex, methodQuery))
       + '">继续刚才的练习 →</a>';
     reading.querySelector('.section-label')?.after(evidence);
     if (location.hash === '#sec-read') {
@@ -660,9 +718,9 @@ export async function mountRelatedSkills() {
 }
 
 function renderFailure(root) {
+  setSkillsHeader('index.html', '七上目录');
   root.innerHTML = '<div class="page-head"><h1>按方法练</h1></div>'
-    + retryMarkup('这道练习暂时没打开。')
-    + '<p><a href="skills.html">回到方法目录</a> · <a href="index.html">回七上目录</a></p>';
+    + retryMarkup('这道练习暂时没打开。');
   bindReload(root);
 }
 

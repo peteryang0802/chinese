@@ -246,3 +246,21 @@
   color: var(--learning-material-ink);
   background: var(--learning-material);
 }
+
+.skills-hub .page-head h1 { font-family: inherit; }
+.skills-hub .skill-grid {
+  max-width: 48rem;
+  grid-template-columns: minmax(0,1fr);
+  gap: 0;
+}
+.skills-hub .skill-card {
+  min-height: 56px;
+  padding: 10px 12px;
+  border: 0;
+  border-block-end: 1px solid var(--line);
+  border-radius: 0;
+  background: transparent;
+}
+.skills-hub .skill-card:hover { background: var(--card); text-decoration: underline; }
+.skills-hub .skill-card strong { font-size: 1.06rem; }
+.skills-hub #practice-entry { margin-top: 12px; }
