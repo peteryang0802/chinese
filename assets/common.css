@@ -669,6 +669,65 @@ img,svg{max-width:100%}
 .learning-skip { font-size: .9rem; }
 .guided-flow .section-label[tabindex="-1"]:focus { outline: none; }
 
+.guided-flow:has(.evidence-stage:not([hidden])) .page-head .lead { display: none; }
+.guided-flow .evidence-stage .section-label { margin-bottom: 6px; }
+.learning-content:has(.evidence-stage:not([hidden])) > .learning-controls { margin-block-start: 12px; }
+.evidence-stage:has([data-check-status]:is([data-check-status="unchecked"], [data-check-status="retry"])) .lesson-skills-disclosure { display: none; }
+.evidence-instruction { max-width: 43rem; margin: 0 0 8px; }
+.evidence-passages { display: grid; gap: 12px; }
+@media (min-width: 840px) {
+  .evidence-passages { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+.evidence-passage, .evidence-synthesis { min-width: 0; margin: 0; }
+.evidence-passage {
+  padding: 0 12px 8px;
+  border: 1px solid #96a9b7;
+  border-radius: 10px;
+  background: var(--learning-material);
+}
+.evidence-passage legend, .evidence-synthesis legend {
+  font-weight: 750;
+  color: var(--learning-material-ink);
+}
+.evidence-passage legend { padding-inline: 4px; }
+.evidence-excerpt { margin-bottom: 8px; }
+.evidence-excerpt p { margin: 0 0 3px; }
+.evidence-source { margin: 3px 0 7px; font-size: .83rem; color: var(--muted); }
+.evidence-options { display: grid; gap: 6px; }
+.evidence-synthesis {
+  margin-top: 8px;
+  padding: 6px 0 0;
+  border: 0;
+}
+.evidence-synthesis legend { color: var(--learning-question-ink); }
+@media (min-width: 1024px) {
+  .evidence-synthesis .evidence-options { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+.evidence-options button {
+  min-height: 44px;
+  padding: 7px 9px;
+  border: 1px solid #8c9a8e;
+  border-radius: 7px;
+  background: var(--card);
+  color: var(--ink);
+  text-align: left;
+  overflow-wrap: anywhere;
+  cursor: pointer;
+}
+.evidence-options button[aria-pressed="true"] {
+  border-color: var(--learning-material-line);
+  box-shadow: inset 0 0 0 1px var(--learning-material-line);
+  color: var(--learning-material-ink);
+  background: #d7e8f5;
+}
+.evidence-options button:disabled { cursor: default; }
+.evidence-exercise [data-needs-review] button[aria-pressed="true"] {
+  border-color: var(--learning-retry-line);
+  color: var(--learning-retry-ink);
+  background: var(--learning-retry);
+  box-shadow: none;
+}
+
 @media print {
   .learning-rail, .learning-controls, .learning-directory, .learning-extra,
   .lesson-skills-disclosure { display: none; }

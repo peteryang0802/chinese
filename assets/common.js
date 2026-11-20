@@ -304,7 +304,7 @@ var learningStages=[];
 var learningIndex=0;
 var learningPath='';
 
-function mountLearning(title, eyebrow, lead, stages, sections, href){
+function mountLearning(title, eyebrow, lead, stages, sections, href, activities){
   var root=document.createElement('div');
   root.className='app-root';
   root.innerHTML=headHTML(href)
@@ -318,6 +318,9 @@ function mountLearning(title, eyebrow, lead, stages, sections, href){
   document.body.appendChild(root);
   learningPath=href;
   learningStages=stages;
+  activities?.forEach(function(activity){
+    learningEvidence.connect(el(activity.id),activity,'g7a-learning-check:evidence:'+href+':'+activity.id,updateLearningAction,currentLearningEpoch);
+  });
   restoreSaved();
   root.querySelectorAll('[data-learning-choice]').forEach(function(fieldset){
     paintLearningChoice(fieldset);
@@ -390,14 +393,15 @@ function updateLearningAction(){
   var quick=current.querySelector('[data-learning-choice]');
   var state=quick&&learningAnswers[quick.dataset.learningChoice];
   var scored=quick&&learningChoiceItem(quick.dataset.learningChoice)[3]!==null;
-  var pending=scored&&!learningCheck.passed(state);
-  var needsChoice=Boolean(state&&(scored?pending:state.choice===null));
+  var activity=globalThis.learningEvidence?.activity(current);
+  var pending=activity?!activity.passed:scored&&!learningCheck.passed(state);
+  var needsChoice=activity?pending:Boolean(state&&(scored?pending:state.choice===null));
   var wolfChoice=current.querySelector('#l20-guess');
   if(wolfChoice&&!wolfChoice.querySelector('[aria-pressed="true"]'))needsChoice=true;
   var checkButton=el('learning-check');
   checkButton.hidden=Boolean(required)||Boolean(linkedReturn)||!pending;
-  checkButton.disabled=!state||state.choice===null&&state.status!=='retry';
-  checkButton.textContent=state?.status==='retry'?'按线索再试':'核对答案';
+  checkButton.disabled=activity?!activity.ready&&activity.status!=='retry':!state||state.choice===null&&state.status!=='retry';
+  checkButton.textContent=(activity?.status??state?.status)==='retry'?'按线索再试':'核对答案';
   el('learning-skip').hidden=checkButton.hidden;
   nextButton.hidden=Boolean(required)||Boolean(linkedReturn)||needsChoice||!next;
   if(next){
@@ -487,6 +491,20 @@ function renderInlineMaterial(clue){
     +'<p class="learning-material">'+escapeHtml(clue)+'</p></details>';
 }
 
+function renderEvidenceCourse(extra,key,href,activities){
+  var stages=[{id:'sec-prep',title:FLOW_OPENERS_G7A[key][0]}].concat(activities.map(function(activity){
+    return {id:activity.id,title:activity.title,action:activity.title};
+  }));
+  var sections=renderCore(key)+activities.map(function(activity){
+    var draft=activity.draft?'<details class="learning-extra" data-evidence-draft hidden><summary>用自己的话写一句（选做）</summary>'
+      +renderBlock(activity.draft)+'</details>':'';
+    return '<section class="section-wrap evidence-stage" id="'+activity.id+'" data-learning-pane hidden>'
+      +'<h2 class="section-label" tabindex="-1">'+escapeHtml(activity.title)+'</h2>'
+      +learningEvidence.render(activity,escapeHtml)+draft+'</section>';
+  }).join('');
+  mountLearning(extra.title,extra.eyebrow,extra.lead,stages,sections,href,activities);
+}
+
 function renderExtra(){
   var key=document.body.dataset.extra;
   var extra=typeof EXTRAS_G7A!=='undefined'&&EXTRAS_G7A[key];
@@ -498,6 +516,8 @@ function renderExtra(){
   }
   document.title=extra.title+' · 我的语文书房';
   setMetaDesc('七年级上册'+extra.title+'：跟着任务动手练。');
+  var evidence=typeof FLOW_EVIDENCE_G7A==='undefined'?null:FLOW_EVIDENCE_G7A[key];
+  if(evidence&&globalThis.learningEvidence){renderEvidenceCourse(extra,key,href,evidence);return;}
   var stages=[{id:'sec-prep',title:FLOW_OPENERS_G7A[key][0]}];
   var guide=FLOW_GUIDES_G7A[key];
   var sections=extra.sections.flatMap(function(section){
@@ -913,6 +933,19 @@ document.addEventListener('click',function(e){
   var choiceAction=node.closest('#learning-check, #learning-skip');
   if(choiceAction){
     var current=el(learningStages[learningIndex].id);
+    var activity=globalThis.learningEvidence?.activity(current);
+    if(activity){
+      if(choiceAction.id==='learning-skip'){
+        activity.skip();
+        var nextStage=learningStages[learningIndex+1];
+        if(nextStage)activateLearningStage(nextStage.id,true,true);
+        else location.href=el('learning-finish').href;
+      }else{
+        activity.check();
+        if(activity.passed)document.querySelector('#learning-next:not([hidden]), #learning-finish:not([hidden])')?.focus();
+      }
+      return;
+    }
     var choiceFieldset=current.querySelector('[data-learning-choice]');
     var answer=learningAnswers[choiceFieldset.dataset.learningChoice];
     if(choiceAction.id==='learning-skip'){

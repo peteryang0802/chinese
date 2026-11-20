@@ -28,14 +28,18 @@
     return state.status === 'assisted' || state.status === 'independent';
   }
 
-  function check(state, correct) {
-    if (state.status !== 'unchecked' || state.choice === null) return state;
-    if (state.choice !== correct) return { ...state, status: 'retry', helped: true, missed: state.choice };
+  function outcome(state, correct) {
+    if (!correct) return { ...state, status: 'retry', helped: true };
     return { ...state, status: state.helped ? 'assisted' : 'independent' };
   }
 
+  function check(state, correct) {
+    if (state.status !== 'unchecked' || state.choice === null) return state;
+    return outcome(state.choice === correct ? state : { ...state, missed: state.choice }, state.choice === correct);
+  }
+
   globalThis.learningCheck = {
-    restore, passed, check,
+    restore, passed, check, outcome,
     label: (state, transfer) => transfer && state.status === 'independent' ? '新材料首次独立完成' : labels[state.status],
   };
 })();
