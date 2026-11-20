@@ -1,0 +1,107 @@
+.walk-starter {
+  width: min(100%, 560px);
+  margin: 10px auto 0;
+}
+.walk-starter h1 {
+  margin: 0 0 8px;
+  color: var(--deep);
+  font-size: clamp(1.23rem, 5.6vw, 1.8rem);
+  line-height: 1.35;
+}
+.walk-card {
+  padding: clamp(11px, 3vw, 18px);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--card);
+}
+.walk-step, .walk-source {
+  color: var(--muted);
+  font-size: .86rem;
+  line-height: 1.45;
+}
+.walk-step { margin-bottom: 3px; }
+.walk-source { margin-top: 8px; }
+.walk-card h2 {
+  font-size: clamp(1.12rem, 4.8vw, 1.35rem);
+  line-height: 1.4;
+}
+.walk-evidence {
+  margin-top: 7px;
+  padding: 7px 9px;
+  border-left: 3px solid #6b927e;
+  border-radius: 0 7px 7px 0;
+  line-height: 1.5;
+  background: #f2f1e7;
+}
+.walk-choices {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+  margin: 8px 0 0;
+  padding: 0;
+  border: 0;
+}
+.walk-choices button, .walk-primary, .walk-secondary, .walk-restart, .walk-back {
+  min-height: 44px;
+  padding: 7px 10px;
+  border-radius: 8px;
+  line-height: 1.42;
+}
+.walk-choices button, .walk-secondary {
+  border: 1px solid #8b9d90;
+  background: #fffefa;
+  color: #204e3d;
+  cursor: pointer;
+}
+.walk-choices button {
+  width: 100%;
+  text-align: start;
+}
+.walk-choices button[aria-pressed="true"] {
+  border-color: #205b48;
+  background: #e5efe2;
+  font-weight: 750;
+}
+.walk-feedback:not(:empty) {
+  margin-top: 8px;
+  padding: 7px 9px;
+  border-radius: 7px;
+  color: #503b1e;
+  background: #f4e9d5;
+  line-height: 1.45;
+}
+.walk-feedback.is-correct {
+  color: #1b4e38;
+  background: #e5efe2;
+}
+.walk-rule { margin-top: 6px; }
+.walk-next { margin-top: 8px; }
+.walk-primary, .walk-secondary, .walk-back {
+  display: inline-flex;
+  align-items: center;
+}
+.walk-primary {
+  border: 1px solid #205b48;
+  color: #fff;
+  background: #205b48;
+  font-weight: 750;
+  text-decoration: none;
+  cursor: pointer;
+}
+.walk-primary:hover { background: #164535; }
+.walk-secondary:hover, .walk-choices button:hover { background: #edf4e9; }
+.walk-followups {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+}
+.walk-restart, .walk-back {
+  border: 0;
+  color: #205b48;
+  background: transparent;
+  text-underline-offset: .18em;
+  text-decoration: underline;
+  cursor: pointer;
+}
+.walk-back { padding-inline: 0; }

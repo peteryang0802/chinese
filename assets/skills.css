@@ -162,3 +162,25 @@
 .skill-entry-links { margin-top: -2px; }
 .skill-task summary .skill-task-progress { color: #2d6955; font-weight: 700; }
 .skill-task-progress:empty { display: none; }
+.skill-evidence {
+  padding-inline-start: 2rem;
+  list-style: decimal;
+}
+.skill-evidence li + li { margin-top: 6px; }
+.skill-method p { margin-top: 6px; }
+.skill-unavailable, .skill-conflict, .skill-history:not([hidden]) {
+  border-radius: 8px;
+  padding: 8px 11px;
+  margin: 8px 0;
+  background: #f4e9d5;
+  color: #503b1e;
+}
+.skill-history:not([hidden]) { background: #f2f1e7; color: var(--ink); }
+.skill-conflict summary, .skill-history summary, .skill-original summary {
+  min-height: 44px;
+  padding-block: 8px;
+  cursor: pointer;
+  font-weight: 750;
+}
+.skill-original p, .skill-history p { white-space: pre-wrap; overflow-wrap: anywhere; }
+.skill-reused { background: #edf4e9; overflow-wrap: anywhere; }

@@ -355,3 +355,24 @@ img,svg{max-width:100%}
 .lesson-skills a:hover { background: #e5efe2; text-decoration: underline; }
 .lesson-skills .return-to-skill { background: #205b48; border-color: #205b48; color: #fff; }
 .lesson-skills .return-to-skill:hover { background: #164535; }
+.lesson-evidence {
+  margin: 10px 0 18px;
+  border-inline-start: 3px solid #6b927e;
+  background: #f2f1e7;
+  scroll-margin-top: 12px;
+}
+.lesson-evidence .skill-evidence {
+  list-style: decimal;
+  padding-inline-start: 1.6rem;
+  margin: 8px 0;
+}
+.lesson-evidence .skill-evidence li + li { margin-top: 5px; }
+.lesson-evidence .skill-material { white-space: pre-line; }
+.lesson-evidence .return-to-skill {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  color: #205b48;
+  font-weight: 750;
+  text-underline-offset: .18em;
+}

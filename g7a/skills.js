@@ -1,10 +1,35 @@
-import { readingSkills } from './skills-content-reading.js';
-import { genreSkills } from './skills-content-genres.js';
-import { languageSkills } from './skills-content-language.js';
+import { loadRecord, saveRecord, listConflicts, saveConflictDraft } from './skills-storage.js';
 
 const orderedIds = ['narrative', 'paragraph', 'structure', 'theme', 'explanation', 'punctuation', 'words'];
-const allSkills = [...readingSkills, ...genreSkills, ...languageSkills];
-const skills = orderedIds.map((id) => allSkills.find((skill) => skill.id === id)).filter(Boolean);
+let skills = [];
+let contentRequest;
+
+async function readContent(load, exportName) {
+  let timer;
+  try {
+    const module = await Promise.race([
+      load(),
+      new Promise((_, reject) => {
+        timer = setTimeout(() => reject(new Error('练习加载超时')), 6000);
+      }),
+    ]);
+    return module[exportName];
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+function loadSkills() {
+  contentRequest ??= Promise.allSettled([
+    readContent(() => import('./skills-content-reading.js'), 'readingSkills'),
+    readContent(() => import('./skills-content-genres.js'), 'genreSkills'),
+    readContent(() => import('./skills-content-language.js'), 'languageSkills'),
+  ]).then((results) => {
+    const loaded = results.flatMap((result) => result.status === 'fulfilled' ? result.value : []);
+    skills = orderedIds.map((id) => loaded.find((skill) => skill.id === id)).filter(Boolean);
+  });
+  return contentRequest;
+}
 const keywords = {
   narrative: '叙事概括 记事 记叙文 六要素 起因经过结果 主要内容 复述',
   paragraph: '段意 段落大意 段落概括 关键句 中心句',
@@ -38,53 +63,112 @@ function lessonUrl(number, skillId, taskId) {
 const skillUrl = (id) => 'skills.html?skill=' + encodeURIComponent(id);
 const lessonTitle = (number) => window.BOOK_G7A?.units
   .flatMap((unit) => unit.lessons).find((lesson) => lesson.no === number)?.title ?? ('第 ' + number + ' 课');
-const exerciseId = (entry, index) => 'lesson-' + lessonNumber(entry.lesson) + '-' + (index + 1);
-const bookKey = 'g7a-skills-v1:';
+const legacyId = (entry, index) => 'lesson-' + lessonNumber(entry.lesson) + '-' + (index + 1);
+const exerciseId = (entry, index) => entry.id ?? legacyId(entry, index);
+const entryUrl = (id, entry, index) => skillUrl(id) + '&lesson=' + entry.lesson + '#' + exerciseId(entry, index);
 const hasText = (value) => typeof value === 'string' && Boolean(value.trim());
-const sessionRecords = new Map();
+const resumeKey = 'g7a-skills-resume-v2';
 
-function readRecord(key) {
+function remember(skill, id) {
   try {
-    const value = JSON.parse(localStorage.getItem(bookKey + key) || 'null');
-    if (value && typeof value === 'object' && !Array.isArray(value)) return value;
+    localStorage.setItem(resumeKey, JSON.stringify({ skill, id }));
   } catch {
-    // Continue with this page's draft when storage is unavailable.
+    // The exercise remains available when the device cannot remember the entry.
   }
-  return sessionRecords.get(key) ?? {};
 }
 
-function writeRecord(key, record) {
-  sessionRecords.set(key, record);
+function lastExercise() {
   try {
-    localStorage.setItem(bookKey + key, JSON.stringify(record));
-    return true;
+    const record = JSON.parse(localStorage.getItem(resumeKey) || 'null');
+    const skill = skills.find((item) => item.id === record?.skill);
+    if (!skill) return null;
+    const index = skill.entries.findIndex((entry, i) => exerciseId(entry, i) === record.id);
+    if (index >= 0) {
+      const entry = skill.entries[index];
+      return { title: lessonTitle(entry.lesson), href: entryUrl(skill.id, entry, index) };
+    }
+    if (record.id === 'transfer-task') return { title: skill.name + ' · 换文练习', href: skillUrl(skill.id) + '#transfer' };
+    if (record.id === 'recall') return { title: skill.name + ' · 热身', href: skillUrl(skill.id) + '#recall' };
   } catch {
-    return false;
+    // Ignore an unavailable or invalid resume pointer.
   }
+  return null;
+}
+
+function attemptStatus(record) {
+  if (record.revisionDone || record.keptOriginal) return '已自查';
+  if (hasText(record.revision)) return '有改答草稿';
+  if (record.submitted) return '已交初答';
+  return hasText(record.draft) ? '有草稿' : '';
 }
 
 function transferStatus(skill) {
-  const record = readRecord(skill.id + ':transfer');
-  if (record.submitted) return hasText(record.revision) ? '换文已有订正' : '换文已交初答';
-  if (hasText(record.draft)) return '换文练习有草稿';
-  const worked = skill.entries.some((entry, index) =>
-    readRecord(skill.id + ':' + exerciseId(entry, index)).submitted);
-  return worked ? '已做课内练习' : '';
+  const transfer = attemptStatus(loadRecord(skill.id + ':transfer').data);
+  if (transfer) return '换文 · ' + transfer;
+  const progress = skill.entries.map((entry, index) => attemptStatus(loadRecord(
+    skill.id + ':' + exerciseId(entry, index), skill.id + ':' + legacyId(entry, index),
+  ).data));
+  if (progress.some((status) => status.includes('草稿'))) return '课内有草稿';
+  return progress.some(Boolean) ? '已做课内练习' : '';
+}
+
+function searchTerms(query) {
+  return query.normalize('NFKC').replace(/[《》？?。！!]/g, '').trim()
+    .replace(/^(?:请问|我想知道|我想|想知道)/, '').replace(/^(?:怎么|怎样|如何|什么是|练习|学会)/, '')
+    .replace(/(?:吗|呢)$/, '').trim().split(/[、,，和及\s]+/).filter(Boolean);
+}
+
+const searchAliases = {
+  paragraph: '段落的主要意思 段落主要意思 概括这一段 概括段意',
+  theme: '概括中心 归纳主旨 表达什么 作者想说什么',
+  punctuation: '加标点 正确使用标点 写标点',
+};
+
+function searchMatches(skill, terms) {
+  const text = [skill.name, keywords[skill.id], searchAliases[skill.id] ?? '', skill.goal,
+    ...skill.entries.map((entry) => lessonTitle(entry.lesson))].join(' ');
+  return terms.some((term) => text.includes(term));
+}
+
+function evidenceList(item) {
+  if (!item.evidence?.length) return '<p class="skill-material">' + escapeHtml(item.passage) + '</p>';
+  return '<ol class="skill-material skill-evidence">' + item.evidence.map(
+    (line) => '<li>' + escapeHtml(line) + '</li>',
+  ).join('') + '</ol>';
+}
+
+function incompleteContent() {
+  return skills.length < orderedIds.length;
+}
+
+function retryMarkup(message) {
+  return '<p class="skill-unavailable" role="status">' + escapeHtml(message)
+    + ' <button type="button" data-reload class="skill-secondary">重新加载</button></p>';
+}
+
+function bindReload(root) {
+  root.querySelector('[data-reload]')?.addEventListener('click', () => location.reload());
 }
 
 function renderHome(root, query) {
+  const resume = lastExercise();
   root.innerHTML = `
     <div class="page-head">
       <div class="eyebrow">七年级上册</div>
       <h1>按方法练</h1>
       <p class="lead">每次选一个方法。先做一道小题，再到课文里试一次。</p>
-      <a class="skill-start skill-button" href="skills.html?skill=narrative">第一次来，先试一道记事题 →</a>
+      <div class="skill-actions">
+        ${resume ? '<a class="skill-start skill-button" href="' + escapeHtml(resume.href)
+          + '">继续上次 · ' + escapeHtml(resume.title) + '</a>' : ''}
+        <a class="skill-start ${resume ? 'skill-secondary' : 'skill-button'}" href="skills.html?start=walk">第一次来，先试一道记事题 →</a>
+      </div>
     </div>
     <div class="skill-lookup">
       <label for="skill-query">你想练什么？</label>
       <input id="skill-query" type="search" autocomplete="off" placeholder="比如 六要素、分段、标点">
     </div>
     <p class="skill-count" role="status"></p>
+    ${incompleteContent() ? retryMarkup('有些方法暂时没打开，下面的练习可以先做。') : ''}
     <div class="skill-grid"></div>
     <p class="skill-tail"><a href="index.html">按课文找 →</a></p>`;
   const search = root.querySelector('#skill-query');
@@ -92,10 +176,10 @@ function renderHome(root, query) {
   const count = root.querySelector('.skill-count');
   search.value = query;
   function renderMatches() {
-    const terms = search.value.trim().split(/\s+/).filter(Boolean);
-    const matching = skills.filter((skill) => terms.every((term) =>
-      (skill.name + ' ' + keywords[skill.id] + ' ' + skill.goal).includes(term)));
-    grid.innerHTML = matching.map((skill) => {
+    const terms = searchTerms(search.value);
+    const matching = terms.length ? skills.filter((skill) => searchMatches(skill, terms)) : skills;
+    const listed = matching.length ? matching : skills.slice(0, 3);
+    grid.innerHTML = listed.map((skill) => {
       const progress = transferStatus(skill);
       return `<a class="skill-card" href="${skillUrl(skill.id)}">
         <strong>${escapeHtml(skill.name)}</strong>
@@ -105,46 +189,53 @@ function renderHome(root, query) {
     }).join('');
     count.textContent = matching.length
       ? (terms.length ? '找到 ' + matching.length + ' 个方法。' : '')
-      : '没找到。可以试试「分段」「六要素」或「标点」。';
+      : '暂时没找到相同的问法。可以先试下面的方法。';
   }
   search.addEventListener('input', renderMatches);
+  bindReload(root);
   window.addEventListener('pageshow', renderMatches);
   renderMatches();
 }
 
-function quickQuestion(data, key) {
+function quickQuestion(data, key, nextId) {
   return `<fieldset class="skill-quick" data-quick="${key}">
     <legend>${escapeHtml(data.question)}</legend>
     <div class="skill-options">${data.options.map((option, index) =>
       `<button type="button" aria-pressed="false" data-option="${index}">${escapeHtml(option.text)}</button>`,
     ).join('')}</div>
     <p class="skill-option-feedback" role="status"></p>
+    ${nextId ? '<a class="skill-text-link" href="#' + nextId + '" data-recall-next hidden>到课文里试一步 →</a>' : ''}
   </fieldset>`;
 }
 
-function bindQuick(parent, data, key) {
+function bindQuick(parent, data, key, onChoice) {
   const group = parent.querySelector('[data-quick="' + key + '"]');
   const buttons = [...group.querySelectorAll('[data-option]')];
   const feedback = group.querySelector('.skill-option-feedback');
+  const next = group.querySelector('[data-recall-next]');
+  const { data: state } = loadRecord(key);
   function select(index) {
     if (!Number.isInteger(index) || !data.options[index]) return;
     buttons.forEach((button, i) => button.setAttribute('aria-pressed', String(i === index)));
     const correct = index === data.correct;
     feedback.dataset.tone = correct ? 'correct' : 'hint';
-    feedback.textContent = (correct ? '选对了。' : '再想一步。') + data.options[index].why
-      + (correct ? ' ' + data.takeaway : '');
+    feedback.textContent = (correct ? '选对了。' : '再想一步。') + data.options[index].why;
+    if (next) next.hidden = !correct;
   }
-  select(readRecord(key).choice);
-  buttons.forEach((button, index) => button.addEventListener('click', () => {
-    writeRecord(key, { choice: index });
+  select(state.choice);
+  buttons.forEach((button, index) => button.addEventListener('click', async () => {
     select(index);
+    onChoice?.();
+    const current = loadRecord(key);
+    const result = await saveRecord(key, { choice: index }, current.version);
+    if (result.status === 'unavailable') feedback.textContent += '（本次选择未能保存。）';
   }));
 }
 
-function exerciseTemplate(item, id, nextId) {
+function exerciseTemplate(item, id, nextId, skillId) {
   return `<div class="skill-exercise" data-exercise="${id}">
     ${item.source ? '<p class="skill-source">' + escapeHtml(item.source) + '</p>' : ''}
-    <p class="skill-material">${escapeHtml(item.passage)}</p>
+    ${evidenceList(item)}
     ${item.quick ? quickQuestion(item.quick, id + '-quick') : ''}
     <label class="skill-question" for="${id}-draft">${escapeHtml(item.question)}</label>
     <textarea id="${id}-draft" rows="3" placeholder="先写一句，哪怕还不完整" data-field="draft"></textarea>
@@ -153,26 +244,36 @@ function exerciseTemplate(item, id, nextId) {
       <button type="button" class="skill-secondary" data-action="hint">我卡住了，给一点提示</button>
       ${item.role === '示范' ? '<button type="button" class="skill-secondary" data-action="example">先看示范</button>' : ''}
     </div>
-    <p class="skill-hint" hidden></p>
+    <p class="skill-hint" tabindex="-1" hidden></p>
     <p class="skill-status" role="status"></p>
+    <div class="skill-conflict" hidden></div>
+    <div class="skill-history" hidden></div>
     <section class="skill-review" hidden aria-labelledby="${id}-review">
       <h4 id="${id}-review" tabindex="-1">看看哪一点可以改</h4>
       <ul>${item.criteria.map((criterion) => '<li>' + escapeHtml(criterion) + '</li>').join('')}</ul>
       <p><strong>一种答法</strong> ${escapeHtml(item.example)}</p>
       <p><strong>容易漏的地方</strong> ${escapeHtml(item.commonError)}</p>
       <div class="skill-correction">
+        <details class="skill-original"><summary>对照我的初答</summary><p></p></details>
         <label for="${id}-revision">我现在会这样答</label>
-        <textarea id="${id}-revision" rows="3" placeholder="用自己的话写一遍" data-field="revision"></textarea>
+        <textarea id="${id}-revision" rows="3" placeholder="补上漏掉的部分，或用自己的话写一遍" data-field="revision"></textarea>
         <div class="skill-actions">
-          <button type="button" class="skill-secondary" data-action="finish">保存这次订正</button>
+          <button type="button" class="skill-button" data-action="finish">保存这次订正</button>
+          <button type="button" class="skill-secondary" data-action="keep">自查后保留初答</button>
           ${nextId ? '<a class="skill-text-link" href="#' + nextId + '">用到下一段 →</a>' : ''}
         </div>
+        <p class="skill-status skill-revision-status" role="status"></p>
+        ${item.lesson === 6 && skillId === 'narrative' ? '<a class="skill-text-link" href="' + skillUrl('theme')
+          + '&amp;lesson=6&amp;from=narrative">用刚才的梗概，读《散步》的中心 →</a>' : ''}
+        <button type="button" class="skill-secondary" data-action="restart">收起答案，重新练一次</button>
       </div>
     </section>
   </div>`;
 }
 
-function bindExercise(root, item, id, key) {
+function bindExercise(root, item, id, skillId, oldId = id) {
+  const key = skillId + ':' + (id === 'transfer-task' ? 'transfer' : id);
+  const oldKey = skillId + ':' + (id === 'transfer-task' ? 'transfer' : oldId);
   const exercise = root.querySelector('[data-exercise="' + id + '"]');
   const draft = exercise.querySelector('[data-field="draft"]');
   const revision = exercise.querySelector('[data-field="revision"]');
@@ -180,24 +281,46 @@ function bindExercise(root, item, id, key) {
   const review = exercise.querySelector('.skill-review');
   const showExample = exercise.querySelector('[data-action="example"]');
   const status = exercise.querySelector('.skill-status');
+  const reviewStatus = exercise.querySelector('.skill-revision-status');
   const submit = exercise.querySelector('[data-action="submit"]');
   const showHint = exercise.querySelector('[data-action="hint"]');
-  const record = readRecord(key);
+  const history = exercise.querySelector('.skill-history');
+  const conflictBox = exercise.querySelector('.skill-conflict');
   const summaryStatus = exercise.closest('.skill-task')?.querySelector('.skill-task-progress');
+  const original = exercise.querySelector('.skill-original p');
+  let { data: record, version } = loadRecord(key, oldKey);
+  let pending = Promise.resolve();
+  let updateNumber = 0;
+  let conflict = false;
+  let conflictBackupKey;
+  let storageUnavailable = false;
 
   function updateSummary() {
-    if (!summaryStatus) return;
-    summaryStatus.textContent = hasText(record.revision) ? '已有订正' :
-      record.submitted ? '已交初答' : hasText(record.draft) ? '有草稿' : '';
+    if (summaryStatus) summaryStatus.textContent = attemptStatus(record);
   }
 
-  draft.value = typeof record.draft === 'string' ? record.draft : '';
-  revision.value = typeof record.revision === 'string' ? record.revision : '';
-  if (item.quick) bindQuick(exercise, item.quick, id + '-quick');
+  function showBackups(extraRecord, message) {
+    const backups = listConflicts(key, oldKey);
+    const available = extraRecord ? [{ data: extraRecord }, ...backups] : backups;
+    conflictBox.hidden = false;
+    conflictBox.innerHTML = '<p role="status">' + escapeHtml(message) + '</p>';
+    available.slice(0, 3).forEach((backup) => {
+      const details = document.createElement('details');
+      details.innerHTML = '<summary>查看这份副本</summary><textarea readonly rows="3" aria-label="可复制的作答副本"></textarea>';
+      details.querySelector('textarea').value = [backup.data?.draft, backup.data?.revision].filter(hasText).join('\n\n');
+      conflictBox.append(details);
+    });
+  }
 
-  function persist(message) {
-    status.textContent = writeRecord(key, record) ? message : '浏览器无法保存。这一页打开时仍能继续练习。';
-    updateSummary();
+  function drawHistory() {
+    const attempts = Array.isArray(record.history) ? record.history : [];
+    history.hidden = !attempts.length;
+    if (!attempts.length) return;
+    const previous = attempts.at(-1);
+    history.innerHTML = '<details><summary>上一次练习</summary><p><strong>初答</strong> '
+      + escapeHtml(previous.draft) + '</p>'
+      + (hasText(previous.revision) ? '<p><strong>改答</strong> ' + escapeHtml(previous.revision) + '</p>' : '')
+      + '</details>';
   }
 
   function sync() {
@@ -205,17 +328,71 @@ function bindExercise(root, item, id, key) {
     submit.hidden = record.submitted === true;
     showHint.hidden = record.submitted === true || record.usedHint === true;
     hint.hidden = !record.usedHint || record.submitted === true;
-    hint.textContent = '先试着做到这一点：' + item.criteria[0];
+    hint.textContent = item.hint ?? ('先找一处能支持你判断的词句。' + item.criteria[0]);
     if (showExample) showExample.hidden = record.submitted === true || record.viewedExample === true;
     review.hidden = record.submitted !== true && record.viewedExample !== true;
     exercise.querySelector('.skill-correction').hidden = record.submitted !== true;
+    original.textContent = record.draft ?? '';
+    updateSummary();
+    drawHistory();
   }
 
-  sync();
-  updateSummary();
+  function persist(message, where = status, preserveTransition = false) {
+    const number = ++updateNumber;
+    const snapshot = { ...record };
+    remember(skillId, id);
+    updateSummary();
+    const saving = pending.then(async () => {
+      if (number !== updateNumber && !preserveTransition) return;
+      if (conflict) {
+        const savedBackupKey = saveConflictDraft(key, snapshot, conflictBackupKey);
+        if (savedBackupKey) conflictBackupKey = savedBackupKey;
+        showBackups(savedBackupKey ? null : snapshot, savedBackupKey
+          ? '本页的最新修改已存到作答副本。刷新后可看正式记录。'
+          : '请复制本页内容后再刷新，最新修改暂时无法保存。');
+        if (where !== status) where.textContent = '修改保留在这一页的并行作答中。';
+        return;
+      }
+      const result = await saveRecord(key, snapshot, version, oldKey);
+      if (result.status === 'conflict') {
+        conflict = true;
+        conflictBackupKey = result.backupKey;
+        showBackups(conflictBackupKey ? null : result.backupData ?? snapshot, conflictBackupKey
+          ? '另一页已有更新。正式记录保留，本页内容已另存为副本。'
+          : '另一页已有更新。正式记录保留，请复制本页内容后再刷新。');
+        where.textContent = '本页有一份并行作答。';
+      } else if (result.status === 'saved') {
+        version = result.version;
+        storageUnavailable = false;
+        where.textContent = message;
+        if (!listConflicts(key, oldKey).length) conflictBox.hidden = true;
+      } else {
+        storageUnavailable = true;
+        where.textContent = '这一页可以继续练。当前浏览器无法保存，离开前可复制作答。';
+        showBackups(snapshot, '复制这次作答后再离开此页。');
+        conflictBox.querySelector('details')?.setAttribute('open', '');
+      }
+    });
+    pending = saving.catch(() => {
+      storageUnavailable = true;
+      where.textContent = '这次没能保存。你可以从答题框复制内容。';
+    });
+    trackWrite(pending);
+  }
+
+  function loadFields() {
+    draft.value = typeof record.draft === 'string' ? record.draft : '';
+    revision.value = typeof record.revision === 'string' ? record.revision : '';
+    sync();
+  }
+
+  loadFields();
+  if (item.quick) bindQuick(exercise, item.quick, id + '-quick');
   if (record.submitted) {
     status.textContent = record.usedHint ? '已提交初答，作答时看过提示。' : '已提交初答，作答前未打开提示。';
+    if (record.revisionDone || record.keptOriginal) reviewStatus.textContent = '这次自查已保存。';
   }
+  if (listConflicts(key, oldKey).length) showBackups(null, '这题留有并行作答的副本。');
 
   draft.addEventListener('input', () => {
     if (record.submitted) return;
@@ -226,7 +403,8 @@ function bindExercise(root, item, id, key) {
     record.usedHint = true;
     persist('提示已展开，可以接着写。');
     sync();
-    draft.focus();
+    hint.focus({ preventScroll: true });
+    hint.scrollIntoView({ block: 'nearest' });
   });
   showExample?.addEventListener('click', () => {
     record.usedHint = true;
@@ -249,22 +427,67 @@ function bindExercise(root, item, id, key) {
   });
   revision.addEventListener('input', () => {
     record.revision = revision.value;
-    persist('订正草稿已保存。');
+    record.revisionDone = false;
+    record.keptOriginal = false;
+    persist('改答草稿已保存。', reviewStatus);
   });
   exercise.querySelector('[data-action="finish"]').addEventListener('click', () => {
     if (!hasText(revision.value)) {
-      status.textContent = '把现在的想法写下来，再保存这次订正。';
+      reviewStatus.textContent = '把现在的想法写下来，或自查后保留初答。';
       revision.focus();
       return;
     }
     record.revision = revision.value;
-    persist('初答和订正都已保存。');
+    record.revisionDone = true;
+    record.keptOriginal = false;
+    persist('初答和订正都已保存。', reviewStatus);
+  });
+  exercise.querySelector('[data-action="keep"]').addEventListener('click', () => {
+    record.keptOriginal = true;
+    record.revisionDone = false;
+    persist('已记录自查，初答及已有草稿均保留。', reviewStatus);
+  });
+  exercise.querySelector('[data-action="restart"]').addEventListener('click', () => {
+    if (conflict || storageUnavailable) {
+      reviewStatus.textContent = '请先复制这次作答，再重新打开练习。';
+      return;
+    }
+    const { history: prior = [], ...attempt } = record;
+    record = {
+      draft: '', submitted: false, attempt: (Number(attempt.attempt) || 1) + 1,
+      history: [...(Array.isArray(prior) ? prior : []), attempt],
+    };
+    persist('上一次答案已保留。可以重新作答。', status, true);
+    reviewStatus.textContent = '';
+    exercise.querySelector('.skill-original').open = false;
+    loadFields();
+    draft.focus();
   });
 }
 
-function renderDetail(root, skill, selectedLesson) {
+const pendingWrites = new Set();
+
+function trackWrite(promise) {
+  pendingWrites.add(promise);
+  promise.finally(() => pendingWrites.delete(promise));
+}
+
+function waitForWrites(root) {
+  root.addEventListener('click', async (event) => {
+    const link = event.target.closest('a[href]');
+    if (!link || event.defaultPrevented || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey
+      || !pendingWrites.size || link.hash && link.pathname === location.pathname && link.search === location.search) return;
+    event.preventDefault();
+    const href = link.href;
+    await Promise.allSettled([...pendingWrites]);
+    location.assign(href);
+  });
+}
+
+function renderDetail(root, skill, selectedLesson, reusedSummary = '') {
   const entries = skill.entries;
-  const activeIndex = entries.findIndex((entry, index) => '#' + exerciseId(entry, index) === location.hash);
+  const activeIndex = entries.findIndex((entry, index) => '#' + exerciseId(entry, index) === location.hash
+    || '#' + legacyId(entry, index) === location.hash);
   const lessonIndex = entries.findIndex((entry) => entry.lesson === selectedLesson);
   const startIndex = activeIndex >= 0 ? activeIndex : Math.max(lessonIndex, 0);
   const recallKey = skill.id + ':recall';
@@ -280,12 +503,16 @@ function renderDetail(root, skill, selectedLesson) {
     <div class="skill-jumps">
       <a href="#in-text">直接做课内题</a><a href="#transfer">换材料试试</a>
     </div>
+    ${reusedSummary ? '<aside class="panel skill-reused"><strong>刚才整理的《散步》梗概</strong><p>'
+      + escapeHtml(reusedSummary) + '</p><p>前后两次决定，分别照顾到了谁？</p><a class="skill-text-link" href="#'
+      + exerciseId(entries[startIndex], startIndex) + '">用这段梗概做中心题 →</a></aside>' : ''}
     <section class="skill-section panel" id="recall" aria-labelledby="recall-title">
       <h2 id="recall-title">先回想一个小学学过的办法</h2>
       <p class="skill-source">${escapeHtml(skill.recall.source)}</p>
-      ${quickQuestion(skill.recall, recallKey)}
+      ${quickQuestion(skill.recall, recallKey, exerciseId(entries[startIndex], startIndex))}
       <details class="skill-method">
         <summary>做题时怎么想</summary>
+        ${skill.recall.takeaway ? '<p>' + escapeHtml(skill.recall.takeaway) + '</p>' : ''}
         <ol>${skill.method.map((step) => '<li>' + escapeHtml(step) + '</li>').join('')}</ol>
         <p>${escapeHtml(skill.pitfall)}</p>
       </details>
@@ -302,7 +529,7 @@ function renderDetail(root, skill, selectedLesson) {
             <a class="skill-text-link" href="${escapeHtml(lessonUrl(entry.lesson, skill.id, id))}">回课文找证据</a>
             <a class="skill-text-link" href="#recall">想不起方法？先做小题</a>
           </div>
-          ${exerciseTemplate(entry, id, nextId)}
+          ${exerciseTemplate(entry, id, nextId, skill.id)}
         </details>`;
       }).join('')}
     </section>
@@ -311,14 +538,17 @@ function renderDetail(root, skill, selectedLesson) {
       ${exerciseTemplate(skill.transfer, 'transfer-task')}
     </section>
     <p class="skill-tail">作答和订正保存在当前浏览器。 <a href="skills.html">回到所有方法 →</a></p>`;
-  bindQuick(root, skill.recall, recallKey);
+  bindQuick(root, skill.recall, recallKey, () => remember(skill.id, 'recall'));
   entries.forEach((entry, index) => {
-    const id = exerciseId(entry, index);
-    bindExercise(root, entry, id, skill.id + ':' + id);
+    bindExercise(root, entry, exerciseId(entry, index), skill.id, legacyId(entry, index));
   });
-  bindExercise(root, skill.transfer, 'transfer-task', skill.id + ':transfer');
+  bindExercise(root, skill.transfer, 'transfer-task', skill.id);
+  waitForWrites(root);
   function openLinkedExercise() {
-    const target = document.getElementById(location.hash.slice(1));
+    const hash = location.hash.slice(1);
+    const index = entries.findIndex((entry, i) => legacyId(entry, i) === hash);
+    const id = index >= 0 ? exerciseId(entries[index], index) : hash;
+    const target = document.getElementById(id);
     if (!target) return;
     if (target.tagName === 'DETAILS') target.open = true;
     requestAnimationFrame(() => target.scrollIntoView({ block: 'start' }));
@@ -328,11 +558,12 @@ function renderDetail(root, skill, selectedLesson) {
   openLinkedExercise();
 }
 
-export function mountRelatedSkills() {
+export async function mountRelatedSkills() {
   const lesson = Number(document.body.dataset.lesson?.slice(1));
   const extra = document.body.dataset.extra;
   const head = document.querySelector('.lesson-stage .page-head');
   if (!head || document.querySelector('.lesson-skills')) return;
+  await loadSkills();
   const matching = skills.filter((skill) => lesson
     ? skill.entries.some((entry) => entry.lesson === lesson)
     : extraSkills[extra]?.includes(skill.id));
@@ -347,31 +578,74 @@ export function mountRelatedSkills() {
   const params = new URLSearchParams(location.search);
   const fromSkill = params.get('fromSkill');
   const fromTask = params.get('fromTask');
-  const backTo = matching.find((skill) => skill.id === fromSkill && skill.entries.some(
-    (entry, index) => entry.lesson === lesson && exerciseId(entry, index) === fromTask,
-  ));
-  if (backTo) {
-    const back = document.createElement('a');
-    back.className = 'return-to-skill';
-    back.href = skillUrl(backTo.id) + '&lesson=' + lesson + '#' + fromTask;
-    back.textContent = '继续刚才的练习 →';
-    section.append(back);
+  const sourceSkill = matching.find((skill) => skill.id === fromSkill);
+  const taskIndex = sourceSkill?.entries.findIndex((entry, index) => entry.lesson === lesson
+    && (exerciseId(entry, index) === fromTask || legacyId(entry, index) === fromTask)) ?? -1;
+  const reading = document.getElementById('sec-read');
+  if (taskIndex >= 0 && reading) {
+    const task = sourceSkill.entries[taskIndex];
+    const evidence = document.createElement('section');
+    evidence.className = 'panel lesson-evidence';
+    evidence.innerHTML = '<h3>刚才那道题的证据</h3><p>' + escapeHtml(task.source) + '</p>'
+      + evidenceList(task) + '<a class="return-to-skill" href="' + escapeHtml(entryUrl(sourceSkill.id, task, taskIndex))
+      + '">继续刚才的练习 →</a>';
+    reading.querySelector('.section-label')?.after(evidence);
+    if (location.hash === '#sec-read') requestAnimationFrame(() => evidence.scrollIntoView({ block: 'start' }));
   }
   matching.forEach((skill) => {
     const link = document.createElement('a');
     const index = skill.entries.findIndex((entry) => entry.lesson === lesson);
-    link.href = index < 0 ? skillUrl(skill.id)
-      : skillUrl(skill.id) + '&lesson=' + lesson + '#' + exerciseId(skill.entries[index], index);
+    link.href = index < 0 ? skillUrl(skill.id) : entryUrl(skill.id, skill.entries[index], index);
     link.textContent = skill.name;
     section.append(link);
   });
   head.after(section);
 }
 
-const app = document.querySelector('[data-skills-app]');
-if (app) {
-  const params = new URLSearchParams(location.search);
-  const selected = skills.find((skill) => skill.id === params.get('skill'));
-  if (selected) renderDetail(app, selected, Number(params.get('lesson')));
-  else renderHome(app, params.get('q') ?? '');
+function renderFailure(root) {
+  root.innerHTML = '<div class="page-head"><h1>按方法练</h1></div>'
+    + retryMarkup('这道练习暂时没打开。')
+    + '<p><a href="skills.html">回到方法目录</a> · <a href="index.html">回七上目录</a></p>';
+  bindReload(root);
 }
+
+async function boot(root) {
+  const params = new URLSearchParams(location.search);
+  if (params.get('start') === 'walk') {
+    const mountStarter = await readContent(() => import('./skills-starter.js'), 'mountStarter');
+    mountStarter(root, {
+      narrativeHref: skillUrl('narrative') + '&lesson=6#in-text',
+      themeHref: skillUrl('theme') + '&lesson=6',
+      transferHref: skillUrl('narrative') + '#transfer',
+    });
+    return;
+  }
+  await loadSkills();
+  const selectedId = params.get('skill');
+  const selected = skills.find((skill) => skill.id === selectedId);
+  if (selected) {
+    let summary = '';
+    if (selected.id === 'theme' && Number(params.get('lesson')) === 6) {
+      if (params.get('from') === 'walk') {
+        const { walkSummary } = await import('./skills-starter.js').catch(() => ({}));
+        summary = walkSummary ?? '';
+      } else if (params.get('from') === 'narrative') {
+        const narrative = skills.find((skill) => skill.id === 'narrative');
+        const index = narrative?.entries.findIndex((entry) => entry.lesson === 6) ?? -1;
+        if (index >= 0) {
+          const entry = narrative.entries[index];
+          const record = loadRecord('narrative:' + exerciseId(entry, index), 'narrative:' + legacyId(entry, index)).data;
+          summary = record.revisionDone && hasText(record.revision) ? record.revision : record.draft ?? '';
+        }
+      }
+    }
+    renderDetail(root, selected, Number(params.get('lesson')), summary);
+  } else if (!skills.length || selectedId && orderedIds.includes(selectedId)) {
+    renderFailure(root);
+  } else {
+    renderHome(root, params.get('q') ?? '');
+  }
+}
+
+const app = document.querySelector('[data-skills-app]');
+if (app) boot(app).catch(() => renderFailure(app));
