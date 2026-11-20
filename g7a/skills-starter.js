@@ -1,3 +1,5 @@
+import { currentLearningEpoch } from './skills-storage.js?v=parents1';
+
 const progressKey = 'g7a-skills-v1:walk-starter';
 
 const questions = [
@@ -36,6 +38,7 @@ function savedStage() {
 }
 
 function saveStage(stage) {
+  if (!currentLearningEpoch()) return;
   try {
     if (stage === 0) localStorage.removeItem(progressKey);
     else localStorage.setItem(progressKey, String(stage));

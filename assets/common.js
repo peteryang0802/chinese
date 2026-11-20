@@ -6,6 +6,19 @@
 var BOOK = (typeof BOOK_G7A!=='undefined') ? BOOK_G7A : null;
 var LESSONS = (typeof LESSONS_G7A!=='undefined') ? LESSONS_G7A : null;
 
+function parentResetEpoch(){
+  try{return localStorage.getItem('school-parent:reset:chinese');}catch(e){return null;}
+}
+var openedLearningEpoch=parentResetEpoch();
+function currentLearningEpoch(){
+  var epoch=parentResetEpoch();
+  return openedLearningEpoch===epoch&&!(epoch&&epoch.startsWith('pending:'));
+}
+window.addEventListener('parent-learning-reset',function(event){
+  if(event.detail?.subject==='chinese'&&event.detail.phase==='failed')openedLearningEpoch=parentResetEpoch();
+});
+
+
 function el(id){return document.getElementById(id);}
 function pad(n){return (n<10?'0':'')+n;}
 
@@ -26,6 +39,7 @@ function buildSequence(){
 
 /* 记录最近一次访问的页面，供目录“继续上次”和定位单元用 */
 function markVisited(href){
+  if(!currentLearningEpoch())return;
   try{localStorage.setItem('g7a-last',href);}catch(e){}
 }
 
@@ -264,7 +278,9 @@ function activateLearningStage(id, focus, updateUrl){
   });
   el('learning-jump').open=false;
   el('learning-position').textContent='第 '+(learningIndex+1)+' / '+learningStages.length+' 步 · '+stage.title;
-  try{localStorage.setItem('g7a-learning-stage:'+learningPath,stage.id);}catch(e){}
+  if(currentLearningEpoch()){
+    try{localStorage.setItem('g7a-learning-stage:'+learningPath,stage.id);}catch(e){}
+  }
   if(updateUrl)history.replaceState(null,'','#'+stage.id);
   updateLearningAction();
   if(focus){
@@ -297,6 +313,7 @@ function updateLearningAction(){
 }
 
 window.addEventListener('hashchange',function(){
+  if(!currentLearningEpoch())return;
   var linked=learningHash();
   if(linked)activateLearningStage(linked,true,false);
 });
@@ -329,7 +346,9 @@ function renderLesson(){
   var current=BOOK.units.flatMap(function(unit){return unit.lessons;}).find(function(item){return item.id===id;});
   var href='lesson-'+pad(current.no)+'.html';
   markVisited(href);
-  try{localStorage.setItem('g7a-last-title',current.title);}catch(e){}
+  if(currentLearningEpoch()){
+    try{localStorage.setItem('g7a-last-title',current.title);}catch(e){}
+  }
   document.title=current.title+' · 我的语文书房';
   setMetaDesc('七年级上册《'+current.title+'》逐步学习。带着核心问题读课文，用材料练，再回顾方法。');
 
@@ -365,7 +384,9 @@ function renderExtra(){
   if(!extra){failScreen();return;}
   var href=key+'.html';
   markVisited(href);
-  try{localStorage.setItem('g7a-last-title',extra.title);}catch(e){}
+  if(currentLearningEpoch()){
+    try{localStorage.setItem('g7a-last-title',extra.title);}catch(e){}
+  }
   document.title=extra.title+' · 我的语文书房';
   setMetaDesc('七年级上册'+extra.title+'：跟着任务动手练。');
   var stages=[{id:'sec-prep',title:'核心问题'}];
@@ -438,7 +459,9 @@ function enhanceA11y(){
       hint.textContent='带下划线的字词能点，点一下就在原句旁边看释义。';
       var host=firstWord.closest('.verse,.prose');
       if(host&&host.parentNode){host.parentNode.insertBefore(hint,host);}
-      try{localStorage.setItem('gloss-hint-seen','1');}catch(e){}
+      if(currentLearningEpoch()){
+        try{localStorage.setItem('gloss-hint-seen','1');}catch(e){}
+      }
     }
   }
 }
@@ -656,6 +679,7 @@ function speakSentence(box, btn){
 
 /* ---------- 统一交互（事件委托） ---------- */
 document.addEventListener('input',function(e){
+  if(!currentLearningEpoch())return;
   var tb=e.target.closest('.answer-box[data-save]');
   if(tb){
     var ok=false;
@@ -689,6 +713,7 @@ document.addEventListener('keydown',function(e){
 });
 
 document.addEventListener('click',function(e){
+  if(!currentLearningEpoch())return;
   var node=e.target;
 
   // 可点词
@@ -887,9 +912,17 @@ function safeStart(){
   try{
     if(document.body.getAttribute('data-lesson')){renderLesson();}
     else if(document.body.getAttribute('data-extra')){renderExtra();}
-    import('../g7a/skills.js?v=quiet1').then(function(module){
+    import('../g7a/skills.js?v=quiet2').then(function(module){
       return module.mountRelatedSkills();
     }).then(updateLearningAction).catch(function(){});
   }catch(err){failScreen();}
 }
 safeStart();
+
+import('./parent-settings.js?v=1').then(function(module){
+  module.mountParentSettings({
+    subject:'chinese',
+    label:'语文',
+    onReload:function(){location.replace('index.html');}
+  });
+}).catch(function(){});

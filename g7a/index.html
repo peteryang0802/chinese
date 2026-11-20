@@ -7,6 +7,7 @@
 <meta name="theme-color" content="#1d2a33">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%231d2a33'/%3E%3Cpath d='M8 9h16v15H8z' fill='%23f4ecd8'/%3E%3Cpath d='M16 9v15' stroke='%231d2a33' stroke-width='1.5'/%3E%3C/svg%3E">
 <link rel="stylesheet" href="../assets/common.css">
+<link rel="stylesheet" href="../assets/parent-settings.css?v=1">
 </head>
 <body>
 <a class="skip" href="#main">跳到正文</a>
@@ -29,7 +30,7 @@
   <div class="page-head">
     <div class="eyebrow">统编版（人教版）2024 · 七年级上册</div>
     <h1>七年级上册</h1>
-    <p class="lead">六个单元，从四季风景写到想象世界。每课都分三步：先热身、再读懂、最后回味。点任意一课开始。</p>
+    <p class="lead">六个单元，从四季风景写到想象世界。先看核心问题，再带着问题读课文、练方法。</p>
   </div>
   <div id="resume"></div>
   <p class="skills-directory-link"><a class="btn ghost" href="skills.html">按方法练 →</a></p>
@@ -42,9 +43,13 @@
   <div id="toc"></div>
 </main>
 
-<footer class="foot wrap">我的语文书房 · 课前预习 · 课后复习</footer>
+<footer class="foot wrap">
+  我的语文书房 · 课前预习 · 课后复习
+  <div id="chinese-parent-settings" hidden></div>
+</footer>
 
-<script src="data.js"></script>
+<script src="data.js?v=quiet1"></script>
+<script type="module" src="../assets/chinese-records.js?v=1"></script>
 <script>
 (function(){
   if(typeof BOOK_G7A==='undefined'||!BOOK_G7A){

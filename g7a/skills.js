@@ -1,4 +1,4 @@
-import { loadRecord, saveRecord, listConflicts, saveConflictDraft } from './skills-storage.js';
+import { loadRecord, saveRecord, listConflicts, saveConflictDraft, currentLearningEpoch } from './skills-storage.js?v=parents1';
 
 const orderedIds = ['narrative', 'paragraph', 'structure', 'theme', 'explanation', 'punctuation', 'words'];
 let skills = [];
@@ -70,6 +70,7 @@ const hasText = (value) => typeof value === 'string' && Boolean(value.trim());
 const resumeKey = 'g7a-skills-resume-v2';
 
 function remember(skill, id) {
+  if (!currentLearningEpoch()) return;
   try {
     localStorage.setItem(resumeKey, JSON.stringify({ skill, id }));
   } catch {
@@ -376,6 +377,7 @@ function bindExercise(root, item, id, skillId, oldId = id) {
         return;
       }
       const result = await saveRecord(key, snapshot, version, oldKey);
+      if (result.status === 'reset') return;
       if (result.status === 'conflict') {
         conflict = true;
         conflictBackupKey = result.backupKey;
@@ -654,7 +656,7 @@ function renderFailure(root) {
 async function boot(root) {
   const params = new URLSearchParams(location.search);
   if (params.get('start') === 'walk') {
-    const mountStarter = await readContent(() => import('./skills-starter.js?v=quiet1'), 'mountStarter');
+    const mountStarter = await readContent(() => import('./skills-starter.js?v=quiet2'), 'mountStarter');
     mountStarter(root, {
       narrativeHref: skillUrl('narrative') + '&lesson=6#in-text',
       themeHref: skillUrl('theme') + '&lesson=6',
@@ -669,7 +671,7 @@ async function boot(root) {
     let summary = '';
     if (selected.id === 'theme' && Number(params.get('lesson')) === 6) {
       if (params.get('from') === 'walk') {
-        const { walkSummary } = await import('./skills-starter.js?v=quiet1').catch(() => ({}));
+        const { walkSummary } = await import('./skills-starter.js?v=quiet2').catch(() => ({}));
         summary = walkSummary ?? '';
       } else if (params.get('from') === 'narrative') {
         const narrative = skills.find((skill) => skill.id === 'narrative');
@@ -690,4 +692,13 @@ async function boot(root) {
 }
 
 const app = document.querySelector('[data-skills-app]');
-if (app) boot(app).catch(() => renderFailure(app));
+if (app) {
+  import('../assets/parent-settings.js?v=1').then(({ mountParentSettings }) => {
+    mountParentSettings({
+      subject: 'chinese',
+      label: '语文',
+      onReload: () => location.replace('index.html'),
+    });
+  }).catch(() => {});
+  boot(app).catch(() => renderFailure(app));
+}

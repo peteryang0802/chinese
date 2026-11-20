@@ -6,6 +6,24 @@ const forkPrefix = (key) => prefix + 'snapshot:' + encodeURIComponent(key) + ':'
 const backupPrefix = (key) => prefix + 'conflict:' + encodeURIComponent(key) + ':';
 const forkMarker = (key) => prefix + 'has-snapshots:' + key;
 
+
+function parentResetEpoch() {
+  try {
+    return localStorage.getItem('school-parent:reset:chinese');
+  } catch {
+    return null;
+  }
+}
+
+let openedLearningEpoch = parentResetEpoch();
+export function currentLearningEpoch() {
+  const epoch = parentResetEpoch();
+  return openedLearningEpoch === epoch && !epoch?.startsWith('pending:');
+}
+globalThis.addEventListener?.('parent-learning-reset', (event) => {
+  if (event.detail?.subject === 'chinese' && event.detail.phase === 'failed') openedLearningEpoch = parentResetEpoch();
+});
+
 function parseObject(raw) {
   try {
     const value = JSON.parse(raw);
@@ -101,6 +119,7 @@ function storeConflict(storage, key, data, backupKey) {
 }
 
 export function saveConflictDraft(key, data, backupKey) {
+  if (!currentLearningEpoch()) return null;
   try {
     return storeConflict(localStorage, key, data, backupKey);
   } catch {
@@ -121,6 +140,7 @@ function conflict(storage, key, incoming, current, existingBackup) {
 }
 
 function save(key, data, expectedVersion, legacyKey, locked) {
+  if (!currentLearningEpoch()) return { status: 'reset' };
   try {
     const storage = localStorage;
     const current = readCurrent(storage, key, legacyKey);
@@ -167,6 +187,7 @@ export async function saveRecord(key, data, expectedVersion, legacyKey = key) {
     // 给其它页面同一时刻的写入一次同步机会。若更晚到达，
     // 两份快照仍都保留，可由下一次读取或保存检测。
     await new Promise((resolve) => setTimeout(resolve, 50));
+    if (!currentLearningEpoch()) return { status: 'reset' };
     const storage = localStorage;
     const latest = readCurrent(storage, key, legacyKey);
     return latest.version === tentative.version ? tentative
