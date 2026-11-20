@@ -1,6 +1,8 @@
 import { currentLearningEpoch } from './skills-storage.js?v=parents1';
 
 const progressKey = 'g7a-skills-v1:walk-starter';
+const choicesKey = progressKey + ':choices';
+const stages = [{ title: '找出分歧' }, { title: '找出转折' }, { title: '换段文字练概括' }];
 
 const questions = [
   {
@@ -55,15 +57,23 @@ function centerUrl(href) {
 
 export function mountStarter(root, { narrativeHref, themeHref, transferHref }) {
   let stage = savedStage();
+  let savedChoices = {};
+  try { savedChoices = JSON.parse(localStorage.getItem(choicesKey) || '{}') || {}; } catch {}
   document.title = '《散步》开场练习 · 我的语文书房';
+  root.classList.add('guided-starter');
   root.innerHTML = `
-    <section class="walk-starter" aria-labelledby="walk-title">
+    <div class="page-head">
       <h1 id="walk-title">一次散步，走哪条路？</h1>
-      <div class="walk-card" id="walk-stage"></div>
       <p class="walk-source">题旁材料为课文情节改写。纸书《散步》第 27–28 页。</p>
-      <a class="walk-back" href="skills.html">← 所有方法</a>
-    </section>`;
+    </div>
+    <div class="learning-layout">${learningRail.render(stages)}<section class="learning-content walk-starter" aria-labelledby="walk-title">
+      <div class="walk-card" id="walk-stage"></div>
+      <div class="learning-controls"><button class="learning-back" type="button" data-walk-back hidden>← 上一步</button></div>
+    </section></div>`;
   const stageNode = root.querySelector('#walk-stage');
+  const rail = root.querySelector('.learning-rail');
+  const back = root.querySelector('[data-walk-back]');
+  back.addEventListener('click', () => moveTo(stage - 1));
 
   function moveTo(nextStage) {
     stage = nextStage;
@@ -73,16 +83,18 @@ export function mountStarter(root, { narrativeHref, themeHref, transferHref }) {
   }
 
   function render() {
+    learningRail.update(rail, stages, stage);
+    back.hidden = stage === 0;
     if (stage === questions.length) {
       stageNode.innerHTML = `
         <h2 tabindex="-1">你已经抓住了事情的转折</h2>
         <p class="walk-rule">讲一件事，先说遇到了什么，再说哪一步让结果变了。</p>
         <p class="walk-evidence walk-result"></p>
         <div class="walk-followups">
-          <a class="walk-primary walk-center">用这件事读懂文章中心 →</a>
+          <a class="walk-primary walk-transfer">换一段，试同一个方法 →</a>
           <details class="walk-other">
             <summary>其他练习</summary>
-            <a class="walk-secondary walk-transfer">换一段，试同一个方法</a>
+            <a class="walk-secondary walk-center">用这件事读懂文章中心</a>
             <a class="walk-secondary walk-narrative">回七上记叙方法</a>
             <button type="button" class="walk-restart">重新练这两步</button>
           </details>
@@ -96,7 +108,6 @@ export function mountStarter(root, { narrativeHref, themeHref, transferHref }) {
     }
     const question = questions[stage];
     stageNode.innerHTML = `
-      <p class="walk-step">第 ${stage + 1} 步 / 共 ${questions.length} 步</p>
       <h2 id="walk-question" tabindex="-1">${question.prompt}</h2>
       <p id="walk-evidence" class="walk-evidence">${question.evidence}</p>
       <fieldset class="walk-choices" aria-labelledby="walk-question" aria-describedby="walk-evidence">
@@ -107,12 +118,21 @@ export function mountStarter(root, { narrativeHref, themeHref, transferHref }) {
     const buttons = [...stageNode.querySelectorAll('.walk-choices button')];
     const feedback = stageNode.querySelector('.walk-feedback');
     const next = stageNode.querySelector('.walk-next');
-    buttons.forEach((button, index) => button.addEventListener('click', () => {
+    function paintChoice(index) {
       const choice = question.choices[index];
+      if (!choice) return;
       buttons.forEach((option, i) => option.setAttribute('aria-pressed', String(i === index)));
       feedback.textContent = (choice.correct ? '选对了。' : '再想一步。') + choice.reply;
       feedback.classList.toggle('is-correct', Boolean(choice.correct));
       next.hidden = !choice.correct;
+    }
+    paintChoice(savedChoices[stage]);
+    buttons.forEach((button, index) => button.addEventListener('click', () => {
+      savedChoices[stage] = index;
+      if (currentLearningEpoch()) {
+        try { localStorage.setItem(choicesKey, JSON.stringify(savedChoices)); } catch {}
+      }
+      paintChoice(index);
     }));
     next.addEventListener('click', () => moveTo(stage + 1));
   }

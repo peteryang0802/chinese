@@ -1,8 +1,7 @@
 .walk-starter {
-  width: min(100%, 560px);
-  margin: 10px auto 0;
+  width: 100%;
 }
-.walk-starter h1 {
+.guided-starter .page-head h1 {
   margin: 0 0 8px;
   color: var(--deep);
   font-size: clamp(1.23rem, 5.6vw, 1.8rem);
@@ -14,12 +13,11 @@
   border-radius: 14px;
   background: var(--card);
 }
-.walk-step, .walk-source {
+.walk-source {
   color: var(--muted);
   font-size: .86rem;
   line-height: 1.45;
 }
-.walk-step { margin-bottom: 3px; }
 .walk-source { margin-top: 8px; }
 .walk-card h2 {
   font-size: clamp(1.12rem, 4.8vw, 1.35rem);

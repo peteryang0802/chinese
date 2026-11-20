@@ -187,9 +187,7 @@
 
 .guided-skill { max-width: 54rem; }
 .guided-skill .page-head h1 { font-family: inherit; font-size: clamp(1.6rem, 4vw, 2.15rem); }
-.guided-skill .skill-stage-menu a, .guided-skill summary { color: var(--learning-material-ink); }
-.guided-skill .skill-stage-menu a { display: block; min-height: 44px; align-content: center; }
-.guided-skill .skill-stage-menu a[aria-current="step"] { color: var(--ink); font-weight: 750; }
+.guided-skill summary { color: var(--learning-material-ink); }
 .guided-skill .skill-section.panel, .guided-skill .skill-task.panel {
   margin: 0;
   padding: 0;

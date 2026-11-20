@@ -12,7 +12,7 @@ const exactKeys = [
 ];
 
 function collectBlockKeys(block, keys) {
-  for (const key of [block.save, block.save1, block.save2]) {
+  for (const key of [block.save, block.save1, block.save2, block.previous?.save]) {
     if (key) keys.add(key);
   }
   if (block.t === 'readlist') {
@@ -43,6 +43,6 @@ if (entry && lessons && extras) {
     label: '语文',
     entry,
     localKeys: Array.from(keys),
-    localPrefixes: ['g7a-learning-stage:', 'g7a-skills-v1:', 'g7a-skills-v2:'],
+    localPrefixes: ['g7a-learning-stage:', 'g7a-learning-check:', 'g7a-learning-answer:', 'g7a-skills-v1:', 'g7a-skills-v2:'],
   });
 }
