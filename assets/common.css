@@ -568,3 +568,27 @@ img,svg{max-width:100%}
   text-decoration: underline;
   text-underline-offset: .2em;
 }
+
+.guided-flow .cmp-panel svg { max-height: 200px; }
+.guided-flow .cmp-panel[data-result] .cmp-note {
+  padding: 8px 12px;
+  border-inline-start: 3px solid var(--learning-retry-line);
+  color: var(--learning-retry-ink);
+  background: var(--learning-retry);
+}
+.guided-flow .cmp-panel[data-result="correct"] .cmp-note {
+  border-color: var(--learning-correct-line);
+  color: var(--learning-correct-ink);
+  background: var(--learning-correct);
+}
+
+.guided-flow .lab-read .panel:has(> [data-compare-save]) > .prose {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--learning-question-ink);
+}
+.guided-flow .panel:has(> [data-compare-save]) .guess-ask { margin: 0; }
+.guided-flow [data-compare-save] { margin-block-start: 8px; }
+.guided-flow [data-compare-save] .cmp-panel { padding: 10px 14px; }
+.guided-flow [data-compare-save] .cmp-panel svg { max-height: 150px; }

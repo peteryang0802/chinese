@@ -65,14 +65,22 @@ function renderBlock(b, material){
         +(b.title?'<h3 class="step-title">'+b.title+'</h3>':'')
         +b.blocks.map(function(block){return renderBlock(block);}).join('')+'</section>';
     case 'compare':
-      var ctabs=b.options.map(function(o,i){
-        return '<button type="button" class="cmp-tab" data-cmp="'+b.id+'" data-v="'+o.v+'" aria-pressed="'+(i===0)+'">'+o.label+'</button>';
+      var selected=b.options[0].v;
+      if(b.save){
+        selected='';
+        try{selected=localStorage.getItem(b.save)||'';}catch(e){}
+      }
+      var ctabs=b.options.map(function(o){
+        return '<button type="button" class="cmp-tab" data-cmp="'+b.id+'" data-v="'+o.v
+          +'" aria-pressed="'+(selected===o.v)+'">'+o.label+'</button>';
       }).join('');
-      var cpanels=b.options.map(function(o,i){
-        return '<div class="cmp-panel" id="'+b.id+'-'+o.v+'"'+(i?' hidden':'')+'>'+(o.svg||'')
-          +(o.note?'<p class="cmp-note">'+o.note+'</p>':'')+'</div>';
+      var cpanels=b.options.map(function(o){
+        var result=o.result?' data-result="'+o.result+'"':'';
+        return '<div class="cmp-panel" id="'+b.id+'-'+o.v+'"'+result+(selected===o.v?'':' hidden')+'>'
+          +(o.svg||'')+(o.note?'<p class="cmp-note">'+o.note+'</p>':'')+'</div>';
       }).join('');
-      return '<div class="compare" id="'+b.id+'"><div class="cmp-tabs" role="group" aria-label="切换对比">'+ctabs+'</div>'+cpanels+'</div>';
+      return '<div class="compare" id="'+b.id+'"'+(b.save?' data-compare-save="'+b.save+'"':'')+'>'
+        +'<div class="cmp-tabs" role="group" aria-label="切换对比">'+ctabs+'</div>'+cpanels+'</div>';
     case 'twodraft':
       var tdAskId=b.id+'-ask';
       var tdAsk=b.ask?'<p class="guess-ask" id="'+tdAskId+'">'+b.ask+'</p>':'';
@@ -95,8 +103,9 @@ function renderBlock(b, material){
           +'<button type="button" class="rl-btn" data-rl="'+b.id+'" data-v="'+it.v+'" data-k="read" aria-pressed="false">已读</button>'
           +'<button type="button" class="rl-btn" data-rl="'+b.id+'" data-v="'+it.v+'" data-k="mark" aria-pressed="false">书签</button></li>';
       }).join('');
-      return '<div class="readlist" id="'+b.id+'" data-save="'+b.id+'"><ul>'+rlrows+'</ul>'
-        +'<p class="rl-summary" id="'+b.id+'-sum"></p></div>';
+      return '<details class="readlist learning-extra" id="'+b.id+'" data-save="'+b.id+'">'
+        +'<summary>展开篇目和阅读进度</summary><p class="rl-summary" id="'+b.id+'-sum"></p>'
+        +'<ul>'+rlrows+'</ul></details>';
     case 'speak':
       var spHtml=b.sentence;
       var spEms=[];
@@ -293,7 +302,7 @@ window.addEventListener('hashchange',function(){
 });
 
 var longerReadings={
-  l1: [[5,'先看春天的画面'],[4,'回到春草的语言']],
+  l1: [[2,'比较“钻”和“长”'],[5,'读出五幅春景的写法']],
   l4: [[1,'读《观沧海》'],[1,'读《次北固山下》'],[1,'读《闻王昌龄左迁龙标遥有此寄》'],[1,'读《天净沙·秋思》']],
   l8: [[2,'读《咏雪》'],[2,'读《陈太丘与友期行》']],
   l12: [[3,'读第一至三章'],[3,'读第四至六章'],[3,'读第七至九章'],[4,'读第十至十二章']],
@@ -372,8 +381,9 @@ function renderExtra(){
   }).map(function(section,index){
     var id='sec-task-'+(index+1);
     stages.push({id:id,title:section.title,action:section.title});
-    var clue=guide[2]?renderInlineMaterial(guide[2]):undefined;
-    return renderSection(section,section.lab||'lab-read',id,clue);
+    var task=section.blocks.find(function(block){return block.t==='bigq'||block.t==='twodraft';});
+    var clue=task&&(task.clue||guide[2]);
+    return renderSection(section,section.lab||'lab-read',id,clue?renderInlineMaterial(clue):undefined);
   }).join('');
   sections=renderCore(guide)+sections;
   mountLearning(extra.title,extra.eyebrow||'拓展板块',extra.lead,stages,sections,href);
@@ -779,6 +789,8 @@ document.addEventListener('click',function(e){
     document.querySelectorAll('#'+cid+' .cmp-panel').forEach(function(p){p.hidden=true;});
     var cp=document.getElementById(cid+'-'+ctab.getAttribute('data-v'));
     if(cp)cp.hidden=false;
+    var key=ctab.closest('.compare').dataset.compareSave;
+    if(key){try{localStorage.setItem(key,ctab.dataset.v);}catch(e){}}
     return;
   }
 

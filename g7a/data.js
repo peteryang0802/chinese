@@ -117,16 +117,10 @@ var LESSONS_G7A = {
     read:{
       title:'读懂 · 一个字，一幅图',
       blocks:[
-        {t:'html', h:'<p class="step-hint">先看朱自清怎么写第一棵小草。下面两个字，点标签切换，同屏看两幅图。</p>'},
-        {t:'compare', id:'l1-cmp', options:[
-          {v:'zuan', label:'钻', svg:'<svg viewBox="0 0 360 170" role="img" aria-label="小草使着劲钻破泥土"><line x1="20" y1="130" x2="340" y2="130" stroke="#5d6763" stroke-width="2"/><path d="M120 95 q20 -14 40 0 q20 -12 40 2 q18 -10 36 2 l4 18 h-124 z" fill="#c07a3e" opacity="0.9"/><path d="M150 92 l6 14 M200 90 l4 16" stroke="#8a5a2e" stroke-width="2" fill="none"/><path d="M140 130 q-2 -28 4 -40 M140 100 q-10 -8 -16 -6 M140 100 q10 -10 16 -6" stroke="#4a7c59" stroke-width="4" fill="none" stroke-linecap="round"/><path d="M200 130 q0 -30 6 -42 M206 96 q-10 -8 -16 -4 M206 96 q10 -8 14 -2" stroke="#4a7c59" stroke-width="4" fill="none" stroke-linecap="round"/><path d="M180 58 l-8 10 8 10 M180 68 l14 0" stroke="#a84b43" stroke-width="2.5" fill="none" stroke-linecap="round"/></svg>', note:'“钻”：小草使着劲，把头顶的土块都顶裂了，有一股冲劲。'},
-          {v:'chang', label:'长', svg:'<svg viewBox="0 0 360 170" role="img" aria-label="小草静静长高"><line x1="20" y1="130" x2="340" y2="130" stroke="#5d6763" stroke-width="2"/><path d="M120 130 q-2 -34 4 -48 M124 88 q-10 -8 -16 -4 M124 88 q10 -8 16 -2" stroke="#4a7c59" stroke-width="4" fill="none" stroke-linecap="round"/><path d="M180 130 q0 -36 6 -50 M186 84 q-10 -6 -16 -2 M186 84 q10 -6 14 0" stroke="#4a7c59" stroke-width="4" fill="none" stroke-linecap="round"/><path d="M240 130 q2 -32 -4 -46 M236 90 q10 -8 16 -4 M236 90 q-10 -8 -14 -2" stroke="#4a7c59" stroke-width="4" fill="none" stroke-linecap="round"/></svg>', note:'“长”：小草静静长高，没有土块、没有那股顶裂泥土的冲劲。'}
-        ]},
-        {t:'html', h:'<p class="guess-ask">哪个字写出了小草使着劲、压不住的生命力？</p>'},
-        {t:'choices', id:'l1-zuan', save:'l1-zuan', options:[
-          {v:'zuan', label:'钻'},
-          {v:'chang', label:'长'},
-          {v:'unsure', label:'还说不准'}
+        {t:'html', h:'<p class="guess-ask">哪个字更有劲？选一个字，看看它能让你想到怎样的小草。</p>'},
+        {t:'compare', id:'l1-cmp', save:'l1-zuan', options:[
+          {v:'zuan', label:'钻', result:'correct', svg:'<svg viewBox="0 0 360 170" role="img" aria-label="小草使着劲钻破泥土"><line x1="20" y1="130" x2="340" y2="130" stroke="#5d6763" stroke-width="2"/><path d="M120 95 q20 -14 40 0 q20 -12 40 2 q18 -10 36 2 l4 18 h-124 z" fill="#c07a3e" opacity="0.9"/><path d="M150 92 l6 14 M200 90 l4 16" stroke="#8a5a2e" stroke-width="2" fill="none"/><path d="M140 130 q-2 -28 4 -40 M140 100 q-10 -8 -16 -6 M140 100 q10 -10 16 -6" stroke="#4a7c59" stroke-width="4" fill="none" stroke-linecap="round"/><path d="M200 130 q0 -30 6 -42 M206 96 q-10 -8 -16 -4 M206 96 q10 -8 14 -2" stroke="#4a7c59" stroke-width="4" fill="none" stroke-linecap="round"/><path d="M180 58 l-8 10 8 10 M180 68 l14 0" stroke="#a84b43" stroke-width="2.5" fill="none" stroke-linecap="round"/></svg>', note:'选对了。“钻”让人想象小草使着劲冲破泥土，写出了生命力。'},
+          {v:'chang', label:'长', result:'retry', svg:'<svg viewBox="0 0 360 170" role="img" aria-label="小草静静长高"><line x1="20" y1="130" x2="340" y2="130" stroke="#5d6763" stroke-width="2"/><path d="M120 130 q-2 -34 4 -48 M124 88 q-10 -8 -16 -4 M124 88 q10 -8 16 -2" stroke="#4a7c59" stroke-width="4" fill="none" stroke-linecap="round"/><path d="M180 130 q0 -36 6 -50 M186 84 q-10 -6 -16 -2 M186 84 q10 -6 14 0" stroke="#4a7c59" stroke-width="4" fill="none" stroke-linecap="round"/><path d="M240 130 q2 -32 -4 -46 M236 90 q10 -8 16 -4 M236 90 q-10 -8 -14 -2" stroke="#4a7c59" stroke-width="4" fill="none" stroke-linecap="round"/></svg>', note:'再对比一下。“长”告诉我们小草在生长，少了冲破泥土的动作感。'}
         ]},
         {t:'html', h:'<p class="step-hint">下列文字是五幅春景图的节选。春花图整段见纸书第 2–3 页，从“桃树、杏树、梨树”起，到野花仿佛在眨眼为止。</p>'},
         {t:'prose', noteId:'l1-pics', paras:[
@@ -1329,9 +1323,8 @@ var EXTRAS_G7A = {
         ]}
       ]},
       {title:'动手试试', lab:'lab-read', blocks:[
-        {t:'html', h:'<p><a href="lesson-09.html#sec-read">回《从百草园到三味书屋》找材料</a></p>'},
         {t:'bigq', q:'百草园和书屋各找一处材料。试着用一句话说清，作者把这两段经历放在一起回忆，表达了怎样的感受。', save:'p3-try'},
-        {t:'html', h:'<details><summary>写好后检查两点</summary><p>你的说法能解释两处材料吗？如果只写“批判私塾”，就回去看看作者对先生的评价和书屋里的趣事，再调整结论。</p><p><a href="skills.html?skill=theme#transfer">换一段，练习自己归纳中心 →</a></p></details>'}
+        {t:'html', h:'<details><summary>写好后检查两点</summary><p>你的说法能解释两处材料吗？如果只写“批判私塾”，就再看题旁材料里作者对先生的评价和书屋里的趣事，再调整结论。</p><p><a href="skills.html?skill=theme#transfer">换一段，练习自己归纳中心 →</a></p></details>'}
       ]}
     ]
   },
@@ -1437,14 +1430,13 @@ var EXTRAS_G7A = {
         ]}
       ]},
       {title:'动手试试', lab:'lab-read', blocks:[
-        {t:'html', h:'<p><a href="lesson-14.html#sec-read">回《回忆我的母亲》核对段落</a></p>'},
         {t:'bigq', q:'用三句话写开头怎样引出回忆、中间怎样组织往事、结尾怎样写感谢。再指出一处你划分层次的依据。', save:'p4-try'},
-        {t:'html', h:'<details><summary>写好后检查分界</summary><p>你有没有区分往事的大体先后和结尾转入的感谢？可以回去找开始反复说“我应该感谢母亲”的地方。</p><p><a href="skills.html?skill=structure#transfer">换一段，自己试着分层 →</a></p></details>'},
+        {t:'html', h:'<details><summary>写好后检查分界</summary><p>你有没有区分往事的大体先后和结尾转入的感谢？可以在题旁材料找开始反复说“我应该感谢母亲”的地方。</p><p><a href="skills.html?skill=structure#transfer">换一段，自己试着分层 →</a></p></details>'},
         {t:'prose', noteId:'p4-speech-note', paras:[
           '教材 p.93 还有一个口头任务：从白求恩、锺太夫人、陈毅里选一位，先弄清他的生平，再以“<span class="word w-key" data-note="横线上填你选的人物，这是要讲给那个人听的演讲。">＿＿，我想对您说</span>”为题，做一次 3 分钟演讲，说说你从他身上学到了什么。',
           '下面先把演讲要点列出来，再试着讲出声。'
         ]},
-        {t:'bigq', q:'你选谁？想对他说哪三句话？先写要点，再自己掐 3 分钟讲一遍。', save:'p4-speech'}
+        {t:'bigq', q:'你选谁？想对他说哪三句话？先写要点，再自己掐 3 分钟讲一遍。', save:'p4-speech', clue:'先说这位人物做过的一件事，再谈你从中学到的做法，最后说你准备怎样用到自己的生活。'}
       ]}
     ]
   },
@@ -1705,14 +1697,14 @@ const FLOW_GUIDES_G7A = {
   'topic-2': ['古人觉得怎样的朋友值得来往？', '你能用一件事说明选朋友的理由吗？',
     '“与朋友交而不信乎”提醒人检查自己是否守信。可以想一件具体的小事，说明你交朋友看重什么。'],
   'practice-3': ['段落写了什么，怎样一步步归纳成全文的中心？', '两段材料之间有什么联系？',
-    '百草园可选雪地捕鸟或园中的景物，书屋可选读书、画画或溜去后园。分别写下这些材料里的感受，再找两边怎样连在一起。'],
+    '百草园：“单是周围的短短的泥墙根一带，就有无限趣味。”书屋：作者说自己很恭敬博学的先生，也回忆学生曾溜到小园、趁先生读书时画画。用两边各一条细节支持你的概括。'],
   'writing-3': ['你希望别人从故事里读出这个人的哪一点？', '哪些材料该写细，哪些可以略写？',
     '先给自己写一句中心。每写完一件事问自己：它能不能让读者看出这一点？能的就写细，关系远的删减。'],
   'book-3': ['《朝花夕拾》里，成年作者怎样回望童年？', '读完一篇后，你能留下一条有具体证据的书签吗？'],
   'poems-3': ['从诗中哪些景物和动作可以想出画面？', '哪一个词改变了整幅画面的情绪？',
     '选一句诗，先圈出景物和动作，再讲你想象的画面和感受。比如“不知何处吹芦管，一夜征人尽望乡”让人从笛声读出思乡。'],
   'practice-4': ['一篇文章何处换了意思或时间，适合划成一层？', '怎样用简短的话概括每一层，再说明次序？',
-    '找能标出时间、话题或情感变化的词句。概括时一句只写一个主要作用；组织发言时可用“先说一件事，再谈感受，最后说想做什么”。'],
+    '《回忆我的母亲》开头写得到母亲去世的消息，引出往事。中间说“母亲最大的特点是一生不曾脱离过劳动”，按经历回忆她的劳作和家庭生活。后来连用两段“我应该感谢母亲”，写到她留给“我”的经验、知识和意志。'],
   'writing-4': ['“一天”的事情按什么次序写才容易读懂？', '哪一处需要过渡，才能让两段接得更顺？',
     '先按“早上、白天、傍晚”列出事件。标出两处时间变化，在相关段落开头写清它们怎样接上。'],
   'topic-4': ['选一本什么样的书，能满足你现在的兴趣？', '怎么把自己的读书理由讲得具体？',
