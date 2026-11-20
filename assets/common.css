@@ -566,6 +566,8 @@ img,svg{max-width:100%}
   color: var(--learning-material-ink);
   background: var(--learning-material);
 }
+.learning-state { margin: 8px 0 0; color: var(--muted); font-size: .9rem; font-weight: 700; }
+.learning-quick-options button:disabled { cursor: default; }
 .learning-choice-note:not(:empty) {
   margin: 8px 0;
   padding: 8px 12px;
@@ -658,6 +660,13 @@ img,svg{max-width:100%}
   cursor: pointer;
 }
 .learning-action:hover, .guided-flow .btn.primary:hover { background: #164535; }
+.learning-action:disabled, .guided-skill [data-quick-check]:disabled, .guided-starter .walk-check:disabled {
+  border-color: #9aa69a;
+  background: var(--card);
+  color: var(--muted);
+  cursor: default;
+}
+.learning-skip { font-size: .9rem; }
 .guided-flow .section-label[tabindex="-1"]:focus { outline: none; }
 
 @media print {

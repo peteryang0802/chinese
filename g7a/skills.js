@@ -249,34 +249,78 @@ function quickQuestion(data, key, nextId) {
     <div class="skill-options">${data.options.map((option, index) =>
       `<button type="button" aria-pressed="false" data-option="${index}">${escapeHtml(option.text)}</button>`,
     ).join('')}</div>
+    <p class="learning-state" role="status"></p>
     <p class="skill-option-feedback" role="status"></p>
-    ${nextId ? '<a class="skill-button" href="#' + nextId + '" data-recall-next hidden>到课文里试一步 →</a>' : ''}
+    <div class="skill-actions">
+      <button type="button" class="${nextId ? 'skill-button' : 'skill-secondary'}" data-quick-check>核对答案</button>
+      ${nextId ? '<a class="skill-button" href="#' + nextId + '" data-recall-next hidden>到课文里试一步 →</a>'
+        + '<a class="learning-back learning-skip" href="#' + nextId + '" data-quick-skip>先跳过</a>' : ''}
+    </div>
   </fieldset>`;
 }
 
 function bindQuick(parent, data, key, onChoice) {
   const group = parent.querySelector('[data-quick="' + key + '"]');
   const buttons = [...group.querySelectorAll('[data-option]')];
+  const status = group.querySelector('.learning-state');
   const feedback = group.querySelector('.skill-option-feedback');
   const next = group.querySelector('[data-recall-next]');
-  const { data: state } = loadRecord(key);
-  function select(index) {
-    if (!Number.isInteger(index) || !data.options[index]) return;
-    buttons.forEach((button, i) => button.setAttribute('aria-pressed', String(i === index)));
-    const correct = index === data.correct;
-    feedback.dataset.tone = correct ? 'correct' : 'hint';
-    group.dataset.result = correct ? 'correct' : 'retry';
-    feedback.textContent = (correct ? '选对了。' : '再想一步。') + data.options[index].why;
-    if (next) next.hidden = !correct;
+  const check = group.querySelector('[data-quick-check]');
+  const skip = group.querySelector('[data-quick-skip]');
+  const method = next && group.parentElement.querySelector('.skill-method');
+  let state = learningCheck.restore(loadRecord(key).data, data.options.length);
+  let pending = Promise.resolve();
+
+  function paint() {
+    const passed = learningCheck.passed(state);
+    const retry = state.status === 'retry';
+    buttons.forEach((button, index) => {
+      button.setAttribute('aria-pressed', String(index === state.choice));
+      button.disabled = passed || retry;
+    });
+    status.textContent = learningCheck.label(state);
+    group.dataset.checkStatus = state.status;
+    group.dataset.result = passed ? 'correct' : state.missed !== null || retry ? 'retry' : 'unchecked';
+    feedback.dataset.tone = passed ? 'correct' : group.dataset.result === 'retry' ? 'hint' : '';
+    feedback.textContent = passed ? data.options[state.choice].why : state.skipped ? '已留到下次。仍可回来重试。'
+      : state.missed !== null ? data.options[state.missed].why : '';
+    check.hidden = passed;
+    check.disabled = state.choice === null && !retry;
+    check.textContent = retry ? '按线索再试' : '核对答案';
+    if (next) {
+      next.hidden = !passed;
+      skip.hidden = passed;
+    }
   }
-  select(state.choice);
-  buttons.forEach((button, index) => button.addEventListener('click', async () => {
-    select(index);
+
+  function update(changed) {
+    if (!currentLearningEpoch()) return;
+    state = changed;
+    paint();
     onChoice?.();
-    const current = loadRecord(key);
-    const result = await saveRecord(key, { choice: index }, current.version);
-    if (result.status === 'unavailable') feedback.textContent += '（本次选择未能保存。）';
-  }));
+    pending = pending.then(async () => {
+      const { version } = loadRecord(key);
+      const result = await saveRecord(key, changed, version);
+      if (result.status === 'unavailable') feedback.textContent += '（本次选择未能保存。）';
+    });
+    trackWrite(pending);
+  }
+
+  paint();
+  buttons.forEach((button, index) => button.addEventListener('click', () => update({ ...state, choice: index })));
+  method?.addEventListener('toggle', () => {
+    if (method.open && !state.helped && !learningCheck.passed(state)) update({ ...state, helped: true });
+  });
+  check.addEventListener('click', () => {
+    if (state.status === 'retry') {
+      update({ ...state, status: 'unchecked', skipped: false });
+      (buttons[state.choice] ?? buttons[0]).focus();
+    } else {
+      update(learningCheck.check({ ...state, helped: state.helped || Boolean(method?.open) }, data.correct));
+      if (learningCheck.passed(state)) (next ?? status).focus();
+    }
+  });
+  skip?.addEventListener('click', () => update({ ...state, status: 'retry', skipped: true }));
 }
 
 function exerciseTemplate(item, id, nextId, skillId) {
@@ -727,7 +771,7 @@ function renderFailure(root) {
 async function boot(root) {
   const params = new URLSearchParams(location.search);
   if (params.get('start') === 'walk') {
-    const mountStarter = await readContent(() => import('./skills-starter.js?v=desktop1'), 'mountStarter');
+    const mountStarter = await readContent(() => import('./skills-starter.js?v=check1'), 'mountStarter');
     usePracticeHeader();
     mountStarter(root, {
       narrativeHref: skillUrl('narrative') + '&lesson=6#in-text',
@@ -743,7 +787,7 @@ async function boot(root) {
     let summary = '';
     if (selected.id === 'theme' && Number(params.get('lesson')) === 6) {
       if (params.get('from') === 'walk') {
-        const { walkSummary } = await import('./skills-starter.js?v=desktop1').catch(() => ({}));
+        const { walkSummary } = await import('./skills-starter.js?v=check1').catch(() => ({}));
         summary = walkSummary ?? '';
       } else if (params.get('from') === 'narrative') {
         const narrative = skills.find((skill) => skill.id === 'narrative');

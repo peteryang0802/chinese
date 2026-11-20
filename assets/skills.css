@@ -212,7 +212,7 @@
   border-color: var(--learning-material-line);
 }
 .guided-skill .skill-inline-material > a { font-size: .9rem; color: var(--learning-material-ink); }
-.guided-skill .skill-quick[data-result] {
+.guided-skill .skill-quick[data-result="retry"] {
   --answer-fill: var(--learning-retry);
   --answer-ink: var(--learning-retry-ink);
   --answer-line: var(--learning-retry-line);
@@ -223,13 +223,13 @@
   --answer-line: var(--learning-correct-line);
 }
 .guided-skill .skill-option-feedback:not(:empty), .guided-skill .skill-options button[aria-pressed="true"] {
-  color: var(--answer-ink);
-  background: var(--answer-fill);
-  border-color: var(--answer-line);
+  color: var(--answer-ink, var(--learning-material-ink));
+  background: var(--answer-fill, var(--learning-material));
+  border-color: var(--answer-line, var(--learning-material-line));
 }
 .guided-skill .skill-option-feedback:not(:empty) { border-inline-start: 3px solid var(--answer-line); }
 .guided-skill a.skill-button { display: inline-flex; align-items: center; text-decoration: none; }
-.guided-skill [data-recall-next] { margin-top: 12px; }
+.guided-skill .skill-quick .skill-actions { margin-top: 12px; }
 .guided-skill .skill-hint {
   background: var(--learning-material);
   color: var(--learning-material-ink);

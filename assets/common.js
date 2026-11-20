@@ -110,7 +110,7 @@ function renderBlock(b, material){
         +'<button type="button" class="btn ghost" data-draft-copy="'+b.id+'">把初稿复制到修改稿</button>'
         +'<button type="button" class="btn ghost" data-draft-undo="'+b.id+'" hidden>撤回复制</button>'
         +'</div>'
-        +'<p class="save-tip" hidden>已保存在本浏览器</p></div>';
+        +'<p class="save-tip" hidden>草稿已保存在本浏览器</p></div>';
     case 'readlist':
       var rlrows=b.items.map(function(it){
         return '<li class="rl-item"><span class="rl-name">'+it.label+'</span>'
@@ -154,7 +154,7 @@ function renderBlock(b, material){
       var qid='bq-'+b.save;
       return '<p class="big-q" id="'+qid+'">'+b.q+'</p>'+nearby
         +'<textarea class="answer-box" data-save="'+b.save+'" aria-labelledby="'+qid+'" placeholder="'+placeholderFor(b.q,b.ph)+'"></textarea>'
-        +'<p class="save-tip" hidden>已保存在本浏览器</p>'+renderPreviousAnswer(b.previous);
+        +'<p class="save-tip" hidden>草稿已保存在本浏览器</p>'+renderPreviousAnswer(b.previous);
     case 'choices':
       return '<div class="btn-row"'+(b.id?' id="'+b.id+'"':'')+(b.save?' data-save="'+b.save+'"':'')+'>'+b.options.map(function(o){
         return '<button type="button" class="choice" data-v="'+o.v+'" aria-pressed="false">'+o.label+'</button>';
@@ -215,10 +215,23 @@ function headHTML(href){
 
 var learningAnswers={};
 
-function renderLearningChoice(item,key){
+function learningChoiceItem(key){
+  var [phase,id]=key.split(':');
+  return phase==='open'?FLOW_OPENERS_G7A[id]:phase==='read'?FLOW_READING_CHECKS_G7A[id]:FLOW_CHECKS_G7A[id];
+}
+
+function selectLearningAnswer(fieldset,state){
+  var key=fieldset.dataset.learningChoice;
+  learningAnswers[key]=state;
+  try{localStorage.setItem('g7a-learning-check:'+key,JSON.stringify(state));}catch(e){}
+  paintLearningChoice(fieldset);
+  updateLearningAction();
+}
+
+function renderLearningChoice(item,key,method){
   var saved=null;
-  try{saved=localStorage.getItem('g7a-learning-check:'+key);}catch(e){}
-  if(saved!==null&&item[2][Number(saved)]!==undefined)learningAnswers[key]=Number(saved);
+  try{saved=JSON.parse(localStorage.getItem('g7a-learning-check:'+key));}catch(e){}
+  learningAnswers[key]=learningCheck.restore(saved,item[2].length);
   var evidence=item[5]||[];
   return '<fieldset class="learning-quick" data-learning-choice="'+key+'">'
     +'<legend>'+escapeHtml(item[1])+'</legend>'
@@ -227,27 +240,35 @@ function renderLearningChoice(item,key){
     }).join('')+'</div>':'')
     +'<div class="learning-quick-options">'+item[2].map(function(option,index){
       return '<button type="button" data-choice-index="'+index+'" aria-pressed="false">'+escapeHtml(option)+'</button>';
-    }).join('')+'</div><p class="learning-choice-note" role="status"></p></fieldset>';
+    }).join('')+'</div>'
+    +(item[3]===null?'':'<p class="learning-state" role="status"></p>')
+    +'<p class="learning-choice-note" role="status"></p>'
+    +(method?'<details class="learning-extra" data-learning-hint><summary>卡住时看方法</summary>'
+      +'<p class="learning-method">'+escapeHtml(method)+'</p></details>':'')+'</fieldset>';
 }
 
 function paintLearningChoice(fieldset){
   var key=fieldset.dataset.learningChoice;
-  var id=key.slice(key.indexOf(':')+1);
-  var phase=key.slice(0,key.indexOf(':'));
-  var item=phase==='open'?FLOW_OPENERS_G7A[id]:phase==='read'?FLOW_READING_CHECKS_G7A[id]:FLOW_CHECKS_G7A[id];
-  var choice=learningAnswers[key];
+  var item=learningChoiceItem(key);
+  var state=learningAnswers[key];
+  var passed=learningCheck.passed(state);
   fieldset.querySelectorAll('[data-choice-index]').forEach(function(button,index){
-    button.setAttribute('aria-pressed',String(index===choice));
+    button.setAttribute('aria-pressed',String(index===state.choice));
+    button.disabled=passed||state.status==='retry';
   });
   var feedback=fieldset.querySelector('.learning-choice-note');
-  if(choice===undefined)return;
   if(item[3]===null){
-    feedback.textContent=item[4][choice];
-  }else{
-    var correct=choice===item[3];
-    feedback.dataset.result=correct?'correct':'retry';
-    feedback.textContent=(correct?'找对了。':'再看看。')+item[4];
+    feedback.textContent=item[4][state.choice]||'';
+    return;
   }
+  var help=fieldset.querySelector('[data-learning-hint]');
+  var hint=help?.querySelector('p').textContent||'再读一遍题目。先指出题目让你找什么，再看每项有没有贴着材料。';
+  var status=fieldset.querySelector('.learning-state');
+  status.textContent=learningCheck.label(state,key.startsWith('check:'));
+  fieldset.dataset.checkStatus=state.status;
+  feedback.dataset.result=passed?'correct':state.helped||state.status==='retry'?'retry':'';
+  feedback.textContent=passed?item[4]:state.skipped?'已留到下次。仍可回到这道题重试。':state.helped?hint:'';
+  if(help)help.hidden=passed||state.helped||state.status==='retry';
 }
 
 function renderCore(id, prep){
@@ -263,8 +284,7 @@ function renderCore(id, prep){
 function renderRecap(id,method){
   return '<section class="learning-recap" id="sec-recap" data-learning-pane hidden>'
     +'<h2 class="section-label" tabindex="-1">换一份材料试方法</h2>'
-    +'<p class="learning-method">'+escapeHtml(method)+'</p>'
-    +renderLearningChoice(FLOW_CHECKS_G7A[id],'check:'+id)+'</section>';
+    +renderLearningChoice(FLOW_CHECKS_G7A[id],'check:'+id,method)+'</section>';
 }
 
 function renderLearningControls(href){
@@ -273,9 +293,11 @@ function renderLearningControls(href){
   var next=index>=0?seq[index+1]:null;
   return '<div class="learning-controls">'
     +'<button id="learning-back" class="learning-back" type="button" data-learning-go="" hidden>← 上一步</button>'
+    +'<button id="learning-check" class="learning-action" type="button" hidden></button>'
     +'<button id="learning-next" type="button" data-learning-go="" class="learning-action" hidden></button>'
     +'<a id="learning-finish" href="'+(next?next.href:'index.html')+'" class="learning-action" hidden>'
-    +(next?'下一项 · '+escapeHtml(next.title)+' →':'回七上目录 →')+'</a></div>';
+    +(next?'下一项 · '+escapeHtml(next.title)+' →':'回七上目录 →')+'</a>'
+    +'<button id="learning-skip" class="learning-back learning-skip" type="button" hidden>先跳过</button></div>';
 }
 
 var learningStages=[];
@@ -297,7 +319,17 @@ function mountLearning(title, eyebrow, lead, stages, sections, href){
   learningPath=href;
   learningStages=stages;
   restoreSaved();
-  root.querySelectorAll('[data-learning-choice]').forEach(paintLearningChoice);
+  root.querySelectorAll('[data-learning-choice]').forEach(function(fieldset){
+    paintLearningChoice(fieldset);
+    var hint=fieldset.querySelector('[data-learning-hint]');
+    hint?.addEventListener('toggle',function(){
+      var state=learningAnswers[fieldset.dataset.learningChoice];
+      if(hint.open&&currentLearningEpoch()&&!state.helped&&!learningCheck.passed(state)){
+        learningAnswers[fieldset.dataset.learningChoice]={ ...state, helped:true };
+        try{localStorage.setItem('g7a-learning-check:'+fieldset.dataset.learningChoice,JSON.stringify(learningAnswers[fieldset.dataset.learningChoice]));}catch(e){}
+      }
+    });
+  });
   enhanceA11y();
   restoreStepState();
   fillGuessRecall();
@@ -326,7 +358,7 @@ function activateLearningStage(id, focus, updateUrl){
   if(updateUrl)history.replaceState(null,'','#'+stage.id);
   var carry=el('walk-choice-carry');
   if(carry){
-    var route=FLOW_OPENERS_G7A.l6[2][learningAnswers['open:l6']];
+    var route=FLOW_OPENERS_G7A.l6[2][learningAnswers['open:l6']?.choice];
     carry.hidden=!route;
     if(route)carry.textContent='刚才你选择了“'+route.replace(/。$/,'')+'”。对照原文，找出“我”和母亲分别怎样决定。';
   }
@@ -356,9 +388,17 @@ function updateLearningAction(){
   var next=learningStages[learningIndex+1];
   var nextButton=el('learning-next');
   var quick=current.querySelector('[data-learning-choice]');
-  var needsChoice=Boolean(quick&&learningAnswers[quick.dataset.learningChoice]===undefined);
+  var state=quick&&learningAnswers[quick.dataset.learningChoice];
+  var scored=quick&&learningChoiceItem(quick.dataset.learningChoice)[3]!==null;
+  var pending=scored&&!learningCheck.passed(state);
+  var needsChoice=Boolean(state&&(scored?pending:state.choice===null));
   var wolfChoice=current.querySelector('#l20-guess');
   if(wolfChoice&&!wolfChoice.querySelector('[aria-pressed="true"]'))needsChoice=true;
+  var checkButton=el('learning-check');
+  checkButton.hidden=Boolean(required)||Boolean(linkedReturn)||!pending;
+  checkButton.disabled=!state||state.choice===null&&state.status!=='retry';
+  checkButton.textContent=state?.status==='retry'?'按线索再试':'核对答案';
+  el('learning-skip').hidden=checkButton.hidden;
   nextButton.hidden=Boolean(required)||Boolean(linkedReturn)||needsChoice||!next;
   if(next){
     nextButton.dataset.learningGo=next.id;
@@ -870,6 +910,29 @@ document.addEventListener('click',function(e){
     return;
   }
 
+  var choiceAction=node.closest('#learning-check, #learning-skip');
+  if(choiceAction){
+    var current=el(learningStages[learningIndex].id);
+    var choiceFieldset=current.querySelector('[data-learning-choice]');
+    var answer=learningAnswers[choiceFieldset.dataset.learningChoice];
+    if(choiceAction.id==='learning-skip'){
+      selectLearningAnswer(choiceFieldset,{ ...answer, status:'retry', skipped:true });
+      var next=learningStages[learningIndex+1];
+      if(next)activateLearningStage(next.id,true,true);
+      else location.href=el('learning-finish').href;
+    }else if(answer.status==='retry'){
+      selectLearningAnswer(choiceFieldset,{ ...answer, status:'unchecked', skipped:false });
+      (choiceFieldset.querySelector('[aria-pressed="true"]')||choiceFieldset.querySelector('[data-choice-index]'))?.focus();
+    }else{
+      var item=learningChoiceItem(choiceFieldset.dataset.learningChoice);
+      var helped=answer.helped||Boolean(choiceFieldset.querySelector('[data-learning-hint][open]'));
+      var checked=learningCheck.check({ ...answer, helped },item[3]);
+      selectLearningAnswer(choiceFieldset,checked);
+      if(learningCheck.passed(checked))document.querySelector('#learning-next:not([hidden]), #learning-finish:not([hidden])')?.focus();
+    }
+    return;
+  }
+
   var stageButton=node.closest('[data-learning-go]');
   if(stageButton){
     activateLearningStage(stageButton.dataset.learningGo,true,true);
@@ -881,10 +944,7 @@ document.addEventListener('click',function(e){
     var fieldset=selection.closest('[data-learning-choice]');
     var key=fieldset.dataset.learningChoice;
     var choice=Number(selection.dataset.choiceIndex);
-    learningAnswers[key]=choice;
-    try{localStorage.setItem('g7a-learning-check:'+key,String(choice));}catch(e){}
-    paintLearningChoice(fieldset);
-    updateLearningAction();
+    selectLearningAnswer(fieldset,{ ...learningAnswers[key], choice });
     return;
   }
 
@@ -998,7 +1058,7 @@ function safeStart(){
   try{
     if(document.body.getAttribute('data-lesson')){renderLesson();}
     else if(document.body.getAttribute('data-extra')){renderExtra();}
-    import('../g7a/skills.js?v=directory1').then(function(module){
+    import('../g7a/skills.js?v=check1').then(function(module){
       return module.mountRelatedSkills();
     }).then(updateLearningAction).catch(function(){});
   }catch(err){failScreen();}

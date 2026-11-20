@@ -87,7 +87,7 @@ export function mountStarter(root, { narrativeHref, themeHref, transferHref }) {
     back.hidden = stage === 0;
     if (stage === questions.length) {
       stageNode.innerHTML = `
-        <h2 tabindex="-1">你已经抓住了事情的转折</h2>
+        <h2 tabindex="-1">把散步的经过讲清楚</h2>
         <p class="walk-rule">讲一件事，先说遇到了什么，再说哪一步让结果变了。</p>
         <p class="walk-evidence walk-result"></p>
         <div class="walk-followups">
@@ -113,27 +113,59 @@ export function mountStarter(root, { narrativeHref, themeHref, transferHref }) {
       <fieldset class="walk-choices" aria-labelledby="walk-question" aria-describedby="walk-evidence">
         ${question.choices.map((choice) => '<button type="button" aria-pressed="false">' + choice.text + '</button>').join('')}
       </fieldset>
+      <p class="learning-state" role="status"></p>
       <p class="walk-feedback" role="status" aria-atomic="true"></p>
-      <button type="button" class="walk-primary walk-next" hidden>${question.next}</button>`;
+      <div class="learning-controls">
+        <button type="button" class="walk-primary walk-check">核对答案</button>
+        <button type="button" class="walk-primary walk-next" hidden>${question.next}</button>
+        <button type="button" class="learning-back learning-skip" data-walk-skip>先跳过</button>
+      </div>`;
     const buttons = [...stageNode.querySelectorAll('.walk-choices button')];
+    const status = stageNode.querySelector('.learning-state');
     const feedback = stageNode.querySelector('.walk-feedback');
+    const check = stageNode.querySelector('.walk-check');
+    const skip = stageNode.querySelector('[data-walk-skip]');
     const next = stageNode.querySelector('.walk-next');
-    function paintChoice(index) {
-      const choice = question.choices[index];
-      if (!choice) return;
-      buttons.forEach((option, i) => option.setAttribute('aria-pressed', String(i === index)));
-      feedback.textContent = (choice.correct ? '选对了。' : '再想一步。') + choice.reply;
-      feedback.classList.toggle('is-correct', Boolean(choice.correct));
-      next.hidden = !choice.correct;
+    let state = learningCheck.restore(savedChoices[stage], buttons.length);
+    function paint() {
+      const passed = learningCheck.passed(state);
+      const retry = state.status === 'retry';
+      buttons.forEach((option, index) => {
+        option.setAttribute('aria-pressed', String(index === state.choice));
+        option.disabled = passed || retry;
+      });
+      status.textContent = learningCheck.label(state);
+      feedback.textContent = passed ? question.choices[state.choice].reply
+        : state.skipped ? '已留到下次。可以回到上一步重试。' : question.choices[state.missed]?.reply ?? '';
+      feedback.classList.toggle('is-correct', passed);
+      check.hidden = passed;
+      check.disabled = state.choice === null && !retry;
+      check.textContent = retry ? '按线索再试' : '核对答案';
+      next.hidden = !passed;
+      skip.hidden = passed;
     }
-    paintChoice(savedChoices[stage]);
-    buttons.forEach((button, index) => button.addEventListener('click', () => {
-      savedChoices[stage] = index;
-      if (currentLearningEpoch()) {
-        try { localStorage.setItem(choicesKey, JSON.stringify(savedChoices)); } catch {}
+    function update(changed) {
+      if (!currentLearningEpoch()) return;
+      state = changed;
+      savedChoices[stage] = state;
+      try { localStorage.setItem(choicesKey, JSON.stringify(savedChoices)); } catch {}
+      paint();
+    }
+    paint();
+    buttons.forEach((button, index) => button.addEventListener('click', () => update({ ...state, choice: index })));
+    check.addEventListener('click', () => {
+      if (state.status === 'retry') {
+        update({ ...state, status: 'unchecked', skipped: false });
+        (buttons[state.choice] ?? buttons[0]).focus();
+      } else {
+        update(learningCheck.check(state, question.choices.findIndex((choice) => choice.correct)));
+        if (learningCheck.passed(state)) next.focus();
       }
-      paintChoice(index);
-    }));
+    });
+    skip.addEventListener('click', () => {
+      update({ ...state, status: 'retry', skipped: true });
+      moveTo(stage + 1);
+    });
     next.addEventListener('click', () => moveTo(stage + 1));
   }
 
