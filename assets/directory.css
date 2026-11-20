@@ -22,6 +22,12 @@
   margin-block: 10px 16px;
 }
 .directory-available .directory-actions { margin-bottom: 0; }
+.directory-available .learning-quick-options { margin-block: 12px 0; }
+.directory-available .learning-material { margin-block: 10px 0; }
+.directory-available .learning-material p { color: var(--learning-material-ink); }
+@media (min-width: 720px) {
+  .directory-available .learning-quick-options { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
 .directory-secondary {
   display: inline-flex;
   align-items: center;

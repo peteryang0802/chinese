@@ -64,7 +64,9 @@
         else delete group.dataset.needsReview;
       });
       root.dataset.checkStatus = state.status;
-      status.textContent = learningCheck.label(state, step.transfer);
+      status.textContent = step.transfer && state.status === 'independent'
+        ? rows.some(row => row.evidence) ? '新材料 · 首次独立选证正确' : '新材料 · 首次作答正确'
+        : learningCheck.label(state);
       note.dataset.result = passed ? 'correct' : state.status === 'retry' || wrongRow ? 'retry' : '';
       note.textContent = passed ? step.success : state.skipped ? '已留到下次。仍可回到这道题重试。'
         : wrongRow?.hints[state.missedPart.index] ?? '';

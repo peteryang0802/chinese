@@ -37,10 +37,14 @@ function buildSequence(){
   return seq;
 }
 
-/* 记录最近一次访问的页面，供目录“继续上次”和定位单元用 */
-function markVisited(href){
-  if(!currentLearningEpoch())return;
-  try{localStorage.setItem('g7a-last',href);}catch(e){}
+/* 只记真实学习动作。打开一页看看，不覆盖上次学习的位置。 */
+function rememberLearning(){
+  if(!learningPath||!currentLearningEpoch())return;
+  try{
+    localStorage.setItem('g7a-last',learningPath);
+    localStorage.setItem('g7a-last-title',learningTitle);
+    localStorage.setItem('g7a-learning-check:resume:'+learningPath,'1');
+  }catch(e){}
 }
 
 /* 动态写入 meta description，已存在则更新 */
@@ -218,6 +222,7 @@ var learningAnswers={};
 
 function learningChoiceItem(key){
   var [phase,id]=key.split(':');
+  if(phase==='short-open')return SHORT_LESSONS_G7A[id].open;
   return phase==='open'?FLOW_OPENERS_G7A[id]:phase==='read'?FLOW_READING_CHECKS_G7A[id]:FLOW_CHECKS_G7A[id];
 }
 
@@ -234,7 +239,8 @@ function renderLearningChoice(item,key,method){
   try{saved=JSON.parse(localStorage.getItem('g7a-learning-check:'+key));}catch(e){}
   learningAnswers[key]=learningCheck.restore(saved,item[2].length);
   var evidence=item[5]||[];
-  return '<fieldset class="learning-quick" data-learning-choice="'+key+'">'
+  var instant=key.startsWith('short-open:');
+  return '<fieldset class="learning-quick" data-learning-choice="'+key+'"'+(instant?' data-instant-choice':'')+'>'
     +'<legend>'+escapeHtml(item[1])+'</legend>'
     +(evidence.length?'<div class="learning-material">'+evidence.map(function(line){
       return '<p>'+escapeHtml(line)+'</p>';
@@ -242,7 +248,7 @@ function renderLearningChoice(item,key,method){
     +'<div class="learning-quick-options">'+item[2].map(function(option,index){
       return '<button type="button" data-choice-index="'+index+'" aria-pressed="false">'+escapeHtml(option)+'</button>';
     }).join('')+'</div>'
-    +(item[3]===null?'':'<p class="learning-state" role="status"></p>')
+    +(item[3]===null||instant?'':'<p class="learning-state" role="status"></p>')
     +'<p class="learning-choice-note" role="status"></p>'
     +(method?'<details class="learning-extra" data-learning-hint><summary>卡住时看方法</summary>'
       +'<p class="learning-method">'+escapeHtml(method)+'</p></details>':'')+'</fieldset>';
@@ -253,13 +259,19 @@ function paintLearningChoice(fieldset){
   var item=learningChoiceItem(key);
   var state=learningAnswers[key];
   var passed=learningCheck.passed(state);
+  var instant=fieldset.hasAttribute('data-instant-choice');
   fieldset.querySelectorAll('[data-choice-index]').forEach(function(button,index){
     button.setAttribute('aria-pressed',String(index===state.choice));
-    button.disabled=passed||state.status==='retry';
+    button.disabled=passed||(!instant&&state.status==='retry');
   });
   var feedback=fieldset.querySelector('.learning-choice-note');
   if(item[3]===null){
     feedback.textContent=item[4][state.choice]||'';
+    return;
+  }
+  if(instant){
+    feedback.dataset.result=passed?'correct':state.status==='retry'?'retry':'';
+    feedback.textContent=passed?item[4]:state.status==='retry'?item[6]:'';
     return;
   }
   var help=fieldset.querySelector('[data-learning-hint]');
@@ -303,8 +315,10 @@ function renderLearningControls(href){
 var learningStages=[];
 var learningIndex=0;
 var learningPath='';
+var learningTitle='';
+var learningAliases={};
 
-function mountLearning(title, eyebrow, lead, stages, sections, href, activities){
+function mountLearning(title, eyebrow, lead, stages, sections, href, activities, aliases = {}, shortWriting){
   var root=document.createElement('div');
   root.className='app-root';
   root.innerHTML=headHTML(href)
@@ -317,14 +331,18 @@ function mountLearning(title, eyebrow, lead, stages, sections, href, activities)
   document.body.classList.add('guided-learning');
   document.body.appendChild(root);
   learningPath=href;
+  learningTitle=title;
   learningStages=stages;
+  learningAliases=aliases;
   activities?.forEach(function(activity){
     learningEvidence.connect(el(activity.id),activity,'g7a-learning-check:evidence:'+href+':'+activity.id,updateLearningAction,currentLearningEpoch);
   });
   restoreSaved();
   root.querySelectorAll('[data-compare-status]').forEach(bindGradedComparison);
   root.querySelectorAll('[data-self-review]').forEach(function(review){
-    learningReview.connect(review.closest('[data-learning-pane]'),'g7a-learning-check:self:',updateLearningAction,currentLearningEpoch);
+    var section=review.closest('[data-learning-pane]');
+    learningReview.connect(section,'g7a-learning-check:self:',updateLearningAction,currentLearningEpoch,
+      section.classList.contains('short-writing')?shortWriting:undefined);
   });
   root.querySelectorAll('[data-learning-choice]').forEach(function(fieldset){
     paintLearningChoice(fieldset);
@@ -344,11 +362,12 @@ function mountLearning(title, eyebrow, lead, stages, sections, href, activities)
   var stored='';
   try{stored=localStorage.getItem('g7a-learning-stage:'+href)||'';}catch(e){}
   var linked=learningHash();
-  activateLearningStage(linked||stored||stages[0].id,Boolean(linked),false);
+  activateLearningStage(linked||learningAliases[stored]||stored||stages[0].id,Boolean(linked),false);
 }
 
 function learningHash(){
-  var id=location.hash.slice(1);
+  var raw=location.hash.slice(1);
+  var id=learningAliases[raw]||raw;
   return learningStages.some(function(stage){return stage.id===id;})?id:'';
 }
 
@@ -444,7 +463,7 @@ function updateLearningAction(){
   var wolfChoice=current.querySelector('#l20-guess');
   if(wolfChoice&&!wolfChoice.querySelector('[aria-pressed="true"]'))needsChoice=true;
   var checkButton=el('learning-check');
-  checkButton.hidden=Boolean(required)||Boolean(linkedReturn)||!pending;
+  checkButton.hidden=Boolean(required)||Boolean(linkedReturn)||!pending||Boolean(quick?.hasAttribute('data-instant-choice'));
   checkButton.disabled=activity?!activity.ready&&activity.status!=='retry':!state||state.choice===null&&state.status!=='retry';
   checkButton.textContent=activity?.label||((activity?.status??state?.status)==='retry'?'按线索再试':'核对答案');
   nextButton.hidden=Boolean(required)||Boolean(linkedReturn)||needsChoice||!next;
@@ -497,13 +516,15 @@ function renderLesson(){
   if(!lesson||!BOOK){failScreen();return;}
   var current=BOOK.units.flatMap(function(unit){return unit.lessons;}).find(function(item){return item.id===id;});
   var href='lesson-'+pad(current.no)+'.html';
-  markVisited(href);
-  if(currentLearningEpoch()){
-    try{localStorage.setItem('g7a-last-title',current.title);}catch(e){}
-  }
   document.title=current.title+' · 我的语文书房';
   setMetaDesc('七年级上册《'+current.title+'》逐步学习。带着核心问题读课文，用材料练，再回顾方法。');
 
+  var shortLesson=globalThis.learningReview&&globalThis.learningEvidence
+    &&typeof SHORT_LESSONS_G7A!=='undefined'&&SHORT_LESSONS_G7A[id];
+  if(shortLesson){
+    renderShortLesson(id,current,lesson,href,shortLesson);
+    return;
+  }
   var guide=FLOW_GUIDES_G7A[id];
   var activities=courseActivities(id);
   var stages=[{id:'sec-prep',title:FLOW_OPENERS_G7A[id]?.[0]||'判断狼的下一步'}];
@@ -532,18 +553,56 @@ function renderLesson(){
   mountLearning(current.title,eyebrow,lesson.lead,stages,sections,href,activities);
 }
 
+function renderShortLesson(id,current,lesson,href,sample){
+  var stages=[{id:'sec-prep',title:sample.open[0]}];
+  var opening='<section class="learning-core" id="sec-prep" data-learning-pane hidden>'
+    +'<h2 class="section-label" tabindex="-1">'+escapeHtml(sample.open[0])+'</h2>'
+    +renderLearningChoice(sample.open,'short-open:'+id)+'</section>';
+  var excerpts=lesson.read.blocks.flatMap(function(block){
+    if(block.t==='step')return block.blocks.filter(function(entry){return entry.t==='verse'||entry.t==='scene';});
+    return ['prose','verse','cards','html','scene'].includes(block.t)?[block]:[];
+  });
+  var more='<details class="learning-extra"><summary>展开课文选段与词句</summary>'
+    +excerpts.map(function(block){return renderBlock(block);}).join('')+'</details>';
+  var study=appendEvidenceStage(stages,sample.study,more);
+  var oldDrafts=lesson.back.blocks.filter(block=>block.save)
+    .flatMap(function(block,index){
+      var earlier=(typeof FLOW_WRITING_TASKS_G7A!=='undefined'&&FLOW_WRITING_TASKS_G7A[id]?.[index]);
+      return [
+        ...(earlier?[{save:'g7a-learning-answer:'+id+':'+index,question:earlier[1]}]:[]),
+        {save:block.save,question:block.q},
+        ...(block.previous?[block.previous]:[]),
+      ];
+    });
+  var writing=appendShortWriting(stages,sample.write,'sec-recap','g7a-learning-answer:short:'+id,
+    oldDrafts);
+  var aliases={'sec-read-2':'sec-read','sec-apply':'sec-read','sec-back':'sec-recap','sec-back-2':'sec-recap'};
+  var author=current.author||lesson.author;
+  mountLearning(current.title,(lesson.kind||current.type)+(author?' · '+author:''),'',stages,
+    opening+study+writing,href,[sample.study],aliases,sample.write);
+}
+
+function appendShortWriting(stages,task,id,save,previous = []){
+  stages.push({id,title:task.title,action:task.title});
+  var material='<div class="learning-material">'+task.material.map(line=>'<p>'+escapeHtml(line)+'</p>').join('')+'</div>';
+  var question={t:'bigq',q:escapeHtml(task.prompt),ph:escapeHtml(task.placeholder),save};
+  var old=previous.map(renderPreviousAnswer).join('');
+  var blocks=old?[question,{t:'html',h:old}]:[question];
+  return renderSection({title:escapeHtml(task.title),blocks},'lab-back short-writing',id,material,task);
+}
+
 function renderInlineMaterial(clue){
   return '<details class="learning-inline"><summary>看答题线索</summary>'
     +'<p class="learning-material">'+escapeHtml(clue)+'</p></details>';
 }
 
-function appendEvidenceStage(stages,activity){
+function appendEvidenceStage(stages,activity,more = ''){
   stages.push({id:activity.id,title:activity.title,action:activity.title});
   var draft=activity.draft?'<details class="learning-extra" data-evidence-draft hidden><summary>用自己的话写一句（选做）</summary>'
     +renderBlock(activity.draft)+'</details>':'';
   return '<section class="section-wrap evidence-stage" id="'+activity.id+'" data-learning-pane hidden>'
     +'<h2 class="section-label" tabindex="-1">'+escapeHtml(activity.title)+'</h2>'
-    +learningEvidence.render(activity,escapeHtml)+draft+'</section>';
+    +learningEvidence.render(activity,escapeHtml)+draft+more+'</section>';
 }
 
 function appendRecap(stages,id,method){
@@ -554,7 +613,11 @@ function appendRecap(stages,id,method){
 function renderEvidenceCourse(extra,key,href,activities){
   var stages=[{id:'sec-prep',title:FLOW_OPENERS_G7A[key][0]}];
   var sections=renderCore(key)+activities.map(activity=>appendEvidenceStage(stages,activity)).join('');
-  mountLearning(extra.title,extra.eyebrow,extra.lead,stages,sections,href,activities);
+  var writing=typeof FLOW_EVIDENCE_WRITING_G7A!=='undefined'&&FLOW_EVIDENCE_WRITING_G7A[key];
+  if(writing){
+    sections+=appendShortWriting(stages,writing,'sec-recap','g7a-learning-answer:'+key+':proof');
+  }
+  mountLearning(extra.title,extra.eyebrow,extra.lead,stages,sections,href,activities,{},writing);
 }
 
 function courseActivities(id){
@@ -592,10 +655,6 @@ function renderExtra(){
   var extra=typeof EXTRAS_G7A!=='undefined'&&EXTRAS_G7A[key];
   if(!extra){failScreen();return;}
   var href=key+'.html';
-  markVisited(href);
-  if(currentLearningEpoch()){
-    try{localStorage.setItem('g7a-last-title',extra.title);}catch(e){}
-  }
   document.title=extra.title+' · 我的语文书房';
   setMetaDesc('七年级上册'+extra.title+'：跟着任务动手练。');
   var evidence=typeof FLOW_EVIDENCE_G7A==='undefined'?null:FLOW_EVIDENCE_G7A[key];
@@ -899,6 +958,7 @@ document.addEventListener('input',function(e){
   if(!currentLearningEpoch())return;
   var tb=e.target.closest('.answer-box[data-save]');
   if(tb){
+    if(tb.value.trim())rememberLearning();
     var ok=false;
     try{localStorage.setItem(tb.getAttribute('data-save'),tb.value);ok=true;}catch(err){}
     var tipHost=tb.closest('.two-draft')||tb.parentElement;
@@ -932,6 +992,9 @@ document.addEventListener('keydown',function(e){
 document.addEventListener('click',function(e){
   if(!currentLearningEpoch())return;
   var node=e.target;
+  if(node.closest('.learning-content :is([data-choice-index],[data-evidence-choice],.cmp-tab,.choice,[data-show],#learning-check,#learning-next,#learning-finish)')){
+    rememberLearning();
+  }
 
   // 可点词
   var w=node.closest('.word');
@@ -1053,7 +1116,13 @@ document.addEventListener('click',function(e){
     var fieldset=selection.closest('[data-learning-choice]');
     var key=fieldset.dataset.learningChoice;
     var choice=Number(selection.dataset.choiceIndex);
-    selectLearningAnswer(fieldset,{ ...learningAnswers[key], choice });
+    var response={ ...learningAnswers[key], choice };
+    var item=learningChoiceItem(key);
+    if(fieldset.hasAttribute('data-instant-choice')&&item[3]!==null){
+      response=learningCheck.check({ ...response, status:'unchecked' },item[3]);
+    }
+    selectLearningAnswer(fieldset,response);
+    if(fieldset.hasAttribute('data-instant-choice')&&learningCheck.passed(response))el('learning-next').focus();
     return;
   }
 

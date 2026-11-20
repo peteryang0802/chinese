@@ -729,6 +729,11 @@ img,svg{max-width:100%}
   box-shadow: none;
 }
 .draft-self-review { max-width: 52rem; margin: 10px 0 0; }
+.draft-self-review .learning-state:empty { display: none; }
+.draft-self-review [data-result="retry"] { color: var(--learning-retry-ink); }
+.draft-self-review [data-result="correct"] { color: var(--learning-correct-ink); }
+.short-writing .answer-box { min-height: 72px; }
+.short-writing .learning-material p + p { margin-block-start: 4px; }
 .draft-review-panel {
   margin-block-start: 6px;
   padding: 10px 12px;
