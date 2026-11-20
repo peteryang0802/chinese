@@ -16,6 +16,7 @@
   const empty = document.getElementById('find-empty');
   const field = document.getElementById('find-input');
   const resume = document.getElementById('resume');
+  const question = document.getElementById('resume-hook');
   const unitLinks = new Map();
   const sections = new Map();
   const entries = new Map();
@@ -112,8 +113,9 @@
     if (next) {
       const link = document.getElementById('resume-entry');
       link.href = next.href;
-      const label = last ? '继续上次：' : next.number === 1 ? '从第一课开始：' : '从本单元开始：';
-      link.textContent = label + next.title + ' →';
+      question.hidden = Boolean(last) || next.number !== 1;
+      const label = last ? '继续上次：' : next.number === 1 ? '翻开' : '从本单元开始：';
+      link.textContent = (next.number === 1 && !last ? label + '《' + next.title + '》' : label + next.title) + ' →';
       link.hidden = false;
     }
     return last;

@@ -94,7 +94,8 @@ function renderBlock(b, material){
           +(o.svg||'')+(o.note?'<p class="cmp-note">'+o.note+'</p>':'')+'</div>';
       }).join('');
       return '<div class="compare" id="'+b.id+'"'+(b.save?' data-compare-save="'+b.save+'"':'')+'>'
-        +'<div class="cmp-tabs" role="group" aria-label="切换对比">'+ctabs+'</div>'+cpanels+'</div>';
+        +'<div class="cmp-tabs" role="group" aria-label="切换对比">'+ctabs+'</div>'+cpanels
+        +(b.options.some(o=>o.result)?'<p class="learning-state" role="status" data-compare-status></p>':'')+'</div>';
     case 'twodraft':
       var tdAskId=b.id+'-ask';
       var tdAsk=b.ask?'<p class="guess-ask" id="'+tdAskId+'">'+b.ask+'</p>':'';
@@ -190,7 +191,7 @@ function placeholderFor(q, ph){
   return '把想法写在这，只有你自己看得到';
 }
 
-function renderSection(sec, labClass, id, material){
+function renderSection(sec, labClass, id, material, review){
   if(!sec)return '';
   var question=sec.blocks.findIndex(function(block){return block.t==='bigq'||block.t==='twodraft';});
   return '<section data-learning-pane class="section-wrap '+labClass+'" id="'+id+'" hidden>'
@@ -201,7 +202,7 @@ function renderSection(sec, labClass, id, material){
         content='<details class="learning-extra"><summary>看词句与写法提示</summary>'+content+'</details>';
       }
       return content;
-    }).join('')+'</div></section>';
+    }).join('')+'</div>'+(review&&question>=0?learningReview.render(review,escapeHtml):'')+'</section>';
 }
 
 function headHTML(href){
@@ -296,8 +297,7 @@ function renderLearningControls(href){
     +'<button id="learning-check" class="learning-action" type="button" hidden></button>'
     +'<button id="learning-next" type="button" data-learning-go="" class="learning-action" hidden></button>'
     +'<a id="learning-finish" href="'+(next?next.href:'index.html')+'" class="learning-action" hidden>'
-    +(next?'下一项 · '+escapeHtml(next.title)+' →':'回七上目录 →')+'</a>'
-    +'<button id="learning-skip" class="learning-back learning-skip" type="button" hidden>先跳过</button></div>';
+    +(next?'下一项 · '+escapeHtml(next.title)+' →':'回七上目录 →')+'</a></div>';
 }
 
 var learningStages=[];
@@ -322,6 +322,10 @@ function mountLearning(title, eyebrow, lead, stages, sections, href, activities)
     learningEvidence.connect(el(activity.id),activity,'g7a-learning-check:evidence:'+href+':'+activity.id,updateLearningAction,currentLearningEpoch);
   });
   restoreSaved();
+  root.querySelectorAll('[data-compare-status]').forEach(bindGradedComparison);
+  root.querySelectorAll('[data-self-review]').forEach(function(review){
+    learningReview.connect(review.closest('[data-learning-pane]'),'g7a-learning-check:self:',updateLearningAction,currentLearningEpoch);
+  });
   root.querySelectorAll('[data-learning-choice]').forEach(function(fieldset){
     paintLearningChoice(fieldset);
     var hint=fieldset.querySelector('[data-learning-hint]');
@@ -373,6 +377,47 @@ function activateLearningStage(id, focus, updateUrl){
   window.scrollTo(0,0);
 }
 
+function currentActivity(pane){
+  return globalThis.learningEvidence?.activity(pane)||globalThis.learningReview?.activity(pane)
+    ||pane.querySelector('[data-compare-status]')?.parentElement.reviewActivity;
+}
+
+function bindGradedComparison(statusLine){
+  var group=statusLine.parentElement;
+  var choices=Array.from(group.querySelectorAll('.cmp-tab'));
+  var storage='g7a-learning-check:compare:'+group.id;
+  var saved;
+  try{saved=JSON.parse(localStorage.getItem(storage));}catch(e){}
+  var state=learningCheck.restore(saved,choices.length);
+  if(!saved&&choices.some(choice=>choice.getAttribute('aria-pressed')==='true'))state.helped=true;
+  function paint(){
+    statusLine.textContent=learningCheck.label(state);
+    choices.forEach(function(choice){
+      choice.disabled=learningCheck.passed(state)||state.status==='retry';
+    });
+  }
+  function update(next){
+    state=next;
+    try{localStorage.setItem(storage,JSON.stringify(state));}catch(e){}
+    paint();updateLearningAction();
+  }
+  group.reviewActivity={
+    get status(){return state.status;},
+    get passed(){return learningCheck.passed(state);},
+    get ready(){return state.status==='retry';},
+    get label(){return state.status==='retry'?'按线索再试':'先选一个词';},
+    select(choice,panel){
+      var index=choices.indexOf(choice);
+      update(learningCheck.outcome({ ...state, choice:index },panel.dataset.result==='correct'));
+    },
+    check(){
+      update({ ...state, status:'unchecked' });
+      choices[state.choice]?.focus();
+    },
+  };
+  paint();
+}
+
 function updateLearningAction(){
   if(!learningStages.length)return;
   var current=el(learningStages[learningIndex].id);
@@ -393,7 +438,7 @@ function updateLearningAction(){
   var quick=current.querySelector('[data-learning-choice]');
   var state=quick&&learningAnswers[quick.dataset.learningChoice];
   var scored=quick&&learningChoiceItem(quick.dataset.learningChoice)[3]!==null;
-  var activity=globalThis.learningEvidence?.activity(current);
+  var activity=currentActivity(current);
   var pending=activity?!activity.passed:scored&&!learningCheck.passed(state);
   var needsChoice=activity?pending:Boolean(state&&(scored?pending:state.choice===null));
   var wolfChoice=current.querySelector('#l20-guess');
@@ -401,8 +446,7 @@ function updateLearningAction(){
   var checkButton=el('learning-check');
   checkButton.hidden=Boolean(required)||Boolean(linkedReturn)||!pending;
   checkButton.disabled=activity?!activity.ready&&activity.status!=='retry':!state||state.choice===null&&state.status!=='retry';
-  checkButton.textContent=(activity?.status??state?.status)==='retry'?'按线索再试':'核对答案';
-  el('learning-skip').hidden=checkButton.hidden;
+  checkButton.textContent=activity?.label||((activity?.status??state?.status)==='retry'?'按线索再试':'核对答案');
   nextButton.hidden=Boolean(required)||Boolean(linkedReturn)||needsChoice||!next;
   if(next){
     nextButton.dataset.learningGo=next.id;
@@ -461,8 +505,10 @@ function renderLesson(){
   setMetaDesc('七年级上册《'+current.title+'》逐步学习。带着核心问题读课文，用材料练，再回顾方法。');
 
   var guide=FLOW_GUIDES_G7A[id];
+  var activities=courseActivities(id);
   var stages=[{id:'sec-prep',title:FLOW_OPENERS_G7A[id]?.[0]||'判断狼的下一步'}];
   var reading=renderReading(id,lesson.read,stages);
+  var apply=activities?appendEvidenceStage(stages,activities[0]):'';
   var evidence=renderInlineMaterial(guide[2]);
   var practice=lesson.back.blocks.map(function(block,index){
     var first=index===0;
@@ -477,13 +523,13 @@ function renderLesson(){
     }:block;
     stages.push({id:stageId,title:title,action:title});
     return renderSection({title:focused?title:first?lesson.back.title:title,blocks:[exercise]},'lab-back',stageId,
-      first||id==='l4'?evidence:undefined);
+      first||id==='l4'?evidence:undefined,courseReview(id,index));
   }).join('');
-  stages.push({id:'sec-recap',title:FLOW_CHECKS_G7A[id][0],action:'换份材料试方法'});
-  var sections=renderCore(id,lesson.prep)+reading+practice+renderRecap(id,guide[3]);
+  var recap=activities?appendEvidenceStage(stages,activities[1]):appendRecap(stages,id,guide[3]);
+  var sections=renderCore(id,lesson.prep)+reading+apply+practice+recap;
   var author=current.author||lesson.author;
   var eyebrow=(lesson.kind||current.type||'课文')+(author?' · '+author:'');
-  mountLearning(current.title,eyebrow,lesson.lead,stages,sections,href);
+  mountLearning(current.title,eyebrow,lesson.lead,stages,sections,href,activities);
 }
 
 function renderInlineMaterial(clue){
@@ -491,18 +537,54 @@ function renderInlineMaterial(clue){
     +'<p class="learning-material">'+escapeHtml(clue)+'</p></details>';
 }
 
+function appendEvidenceStage(stages,activity){
+  stages.push({id:activity.id,title:activity.title,action:activity.title});
+  var draft=activity.draft?'<details class="learning-extra" data-evidence-draft hidden><summary>用自己的话写一句（选做）</summary>'
+    +renderBlock(activity.draft)+'</details>':'';
+  return '<section class="section-wrap evidence-stage" id="'+activity.id+'" data-learning-pane hidden>'
+    +'<h2 class="section-label" tabindex="-1">'+escapeHtml(activity.title)+'</h2>'
+    +learningEvidence.render(activity,escapeHtml)+draft+'</section>';
+}
+
+function appendRecap(stages,id,method){
+  stages.push({id:'sec-recap',title:FLOW_CHECKS_G7A[id][0],action:'换份材料试方法'});
+  return renderRecap(id,method);
+}
+
 function renderEvidenceCourse(extra,key,href,activities){
-  var stages=[{id:'sec-prep',title:FLOW_OPENERS_G7A[key][0]}].concat(activities.map(function(activity){
-    return {id:activity.id,title:activity.title,action:activity.title};
-  }));
-  var sections=renderCore(key)+activities.map(function(activity){
-    var draft=activity.draft?'<details class="learning-extra" data-evidence-draft hidden><summary>用自己的话写一句（选做）</summary>'
-      +renderBlock(activity.draft)+'</details>':'';
-    return '<section class="section-wrap evidence-stage" id="'+activity.id+'" data-learning-pane hidden>'
-      +'<h2 class="section-label" tabindex="-1">'+escapeHtml(activity.title)+'</h2>'
-      +learningEvidence.render(activity,escapeHtml)+draft+'</section>';
-  }).join('');
+  var stages=[{id:'sec-prep',title:FLOW_OPENERS_G7A[key][0]}];
+  var sections=renderCore(key)+activities.map(activity=>appendEvidenceStage(stages,activity)).join('');
   mountLearning(extra.title,extra.eyebrow,extra.lead,stages,sections,href,activities);
+}
+
+function courseActivities(id){
+  var coaching=typeof COURSE_COACHING_G7A==='undefined'?null:COURSE_COACHING_G7A[id];
+  if(!coaching||!globalThis.learningEvidence)return null;
+  return [coaching.study,coaching.transfer].map(function(task,index){
+    var basis=Array.from(id).reduce((total,letter)=>total+letter.codePointAt(0),index);
+    var [instruction,items,judgments,hint]=task;
+    function variants(answer,distractor,clue,order){
+      return order%2 ? { items:[distractor,answer], correct:1, hints:[clue,''] }
+        : { items:[answer,distractor],correct:0,hints:['',clue] };
+    }
+    var passages=items.map(function([title,answer,distractor,clue],part){
+      var field=variants(answer,distractor,clue,basis+part);
+      return {title,lines:field.items,correct:field.correct,hints:field.hints,evidence:true};
+    });
+    var synthesis=variants(judgments[0],judgments[1],hint,basis+items.length+1);
+    return {
+      id:index?'sec-recap':'sec-apply',title:index?'换份材料试方法':'用本课材料找依据',transfer:Boolean(index),
+      instruction,passages,
+      synthesis:{title:'哪一句能解释你选的依据？',options:synthesis.items,correct:synthesis.correct,hints:synthesis.hints},
+      success:judgments[0],
+    };
+  });
+}
+
+function courseReview(id,index){
+  if(typeof COURSE_COACHING_G7A==='undefined'||!globalThis.learningReview)return null;
+  var review=COURSE_COACHING_G7A[id]?.reviews[index];
+  return review?{example:review[0],criteria:review.slice(1)}:null;
 }
 
 function renderExtra(){
@@ -520,6 +602,8 @@ function renderExtra(){
   if(evidence&&globalThis.learningEvidence){renderEvidenceCourse(extra,key,href,evidence);return;}
   var stages=[{id:'sec-prep',title:FLOW_OPENERS_G7A[key][0]}];
   var guide=FLOW_GUIDES_G7A[key];
+  var activities=courseActivities(key);
+  var reviewIndex=0;
   var sections=extra.sections.flatMap(function(section){
     var first=section.blocks.findIndex(function(block){return block.t==='bigq';});
     var second=section.blocks.findIndex(function(block,index){return index>first&&block.t==='bigq';});
@@ -531,14 +615,16 @@ function renderExtra(){
   }).map(function(section,index){
     var id='sec-task-'+(index+1);
     var action=FLOW_EXTRA_STAGE_NAMES_G7A[key][index]||section.title;
-    stages.push({id:id,title:action,action:action});
     var task=section.blocks.find(function(block){return block.t==='bigq'||block.t==='twodraft';});
+    var apply=task&&reviewIndex===0&&activities?appendEvidenceStage(stages,activities[0]):'';
+    var review=task?courseReview(key,reviewIndex++):null;
+    stages.push({id:id,title:action,action:action});
     var clue=task&&(task.clue||guide[2]);
-    return renderSection(section,section.lab||'lab-read',id,clue?renderInlineMaterial(clue):undefined);
+    return apply+renderSection(section,section.lab||'lab-read',id,clue?renderInlineMaterial(clue):undefined,review);
   }).join('');
-  stages.push({id:'sec-recap',title:FLOW_CHECKS_G7A[key][0],action:'换份材料试方法'});
-  sections=renderCore(key)+sections+renderRecap(key,FLOW_EXTRA_METHODS_G7A[key]);
-  mountLearning(extra.title,extra.eyebrow||'拓展板块',extra.lead,stages,sections,href);
+  var recap=activities?appendEvidenceStage(stages,activities[1]):appendRecap(stages,key,FLOW_EXTRA_METHODS_G7A[key]);
+  sections=renderCore(key)+sections+recap;
+  mountLearning(extra.title,extra.eyebrow||'拓展板块',extra.lead,stages,sections,href,activities);
 }
 
 /* ---------- 本地保存恢复 ---------- */
@@ -913,6 +999,7 @@ document.addEventListener('click',function(e){
     dbox.setAttribute('data-prev-d2',d2.value);
     d2.value=d1.value;
     try{localStorage.setItem(d2.getAttribute('data-save'),d2.value);}catch(err){}
+    d2.dispatchEvent(new Event('input',{bubbles:true}));
     var dUndo=dbox.querySelector('[data-draft-undo]');
     if(dUndo)dUndo.hidden=false;
     d2.focus();
@@ -925,35 +1012,24 @@ document.addEventListener('click',function(e){
     var ud2=utas[1];
     ud2.value=ubox.getAttribute('data-prev-d2')||'';
     try{localStorage.setItem(ud2.getAttribute('data-save'),ud2.value);}catch(err){}
+    ud2.dispatchEvent(new Event('input',{bubbles:true}));
     draftUndo.hidden=true;
     ud2.focus();
     return;
   }
 
-  var choiceAction=node.closest('#learning-check, #learning-skip');
+  var choiceAction=node.closest('#learning-check');
   if(choiceAction){
     var current=el(learningStages[learningIndex].id);
-    var activity=globalThis.learningEvidence?.activity(current);
+    var activity=currentActivity(current);
     if(activity){
-      if(choiceAction.id==='learning-skip'){
-        activity.skip();
-        var nextStage=learningStages[learningIndex+1];
-        if(nextStage)activateLearningStage(nextStage.id,true,true);
-        else location.href=el('learning-finish').href;
-      }else{
-        activity.check();
-        if(activity.passed)document.querySelector('#learning-next:not([hidden]), #learning-finish:not([hidden])')?.focus();
-      }
+      activity.check();
+      if(activity.passed)document.querySelector('#learning-next:not([hidden]), #learning-finish:not([hidden])')?.focus();
       return;
     }
     var choiceFieldset=current.querySelector('[data-learning-choice]');
     var answer=learningAnswers[choiceFieldset.dataset.learningChoice];
-    if(choiceAction.id==='learning-skip'){
-      selectLearningAnswer(choiceFieldset,{ ...answer, status:'retry', skipped:true });
-      var next=learningStages[learningIndex+1];
-      if(next)activateLearningStage(next.id,true,true);
-      else location.href=el('learning-finish').href;
-    }else if(answer.status==='retry'){
+    if(answer.status==='retry'){
       selectLearningAnswer(choiceFieldset,{ ...answer, status:'unchecked', skipped:false });
       (choiceFieldset.querySelector('[aria-pressed="true"]')||choiceFieldset.querySelector('[data-choice-index]'))?.focus();
     }else{
@@ -992,6 +1068,7 @@ document.addEventListener('click',function(e){
     if(cp)cp.hidden=false;
     var key=ctab.closest('.compare').dataset.compareSave;
     if(key){try{localStorage.setItem(key,ctab.dataset.v);}catch(e){}}
+    ctab.closest('.compare').reviewActivity?.select(ctab,cp);
     return;
   }
 
@@ -1091,7 +1168,7 @@ function safeStart(){
   try{
     if(document.body.getAttribute('data-lesson')){renderLesson();}
     else if(document.body.getAttribute('data-extra')){renderExtra();}
-    import('../g7a/skills.js?v=check1').then(function(module){
+    import('../g7a/skills.js?v=course-coaching').then(function(module){
       return module.mountRelatedSkills();
     }).then(updateLearningAction).catch(function(){});
   }catch(err){failScreen();}

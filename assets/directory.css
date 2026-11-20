@@ -11,6 +11,9 @@
 }
 .directory-available h2 { font-size: 1.2rem; }
 .directory-available p { color: var(--muted); }
+.directory-hook { border-inline-start: 3px solid var(--learning-question-line); background: var(--learning-question); }
+.directory-hook h2, .directory-question { font-size: 1.2rem; color: var(--learning-question-ink); }
+.directory-question { flex-basis: 100%; margin: 0; font-weight: 750; }
 .directory-actions {
   display: flex;
   flex-wrap: wrap;

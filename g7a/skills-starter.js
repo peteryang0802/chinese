@@ -118,13 +118,11 @@ export function mountStarter(root, { narrativeHref, themeHref, transferHref }) {
       <div class="learning-controls">
         <button type="button" class="walk-primary walk-check">核对答案</button>
         <button type="button" class="walk-primary walk-next" hidden>${question.next}</button>
-        <button type="button" class="learning-back learning-skip" data-walk-skip>先跳过</button>
       </div>`;
     const buttons = [...stageNode.querySelectorAll('.walk-choices button')];
     const status = stageNode.querySelector('.learning-state');
     const feedback = stageNode.querySelector('.walk-feedback');
     const check = stageNode.querySelector('.walk-check');
-    const skip = stageNode.querySelector('[data-walk-skip]');
     const next = stageNode.querySelector('.walk-next');
     let state = learningCheck.restore(savedChoices[stage], buttons.length);
     function paint() {
@@ -142,7 +140,6 @@ export function mountStarter(root, { narrativeHref, themeHref, transferHref }) {
       check.disabled = state.choice === null && !retry;
       check.textContent = retry ? '按线索再试' : '核对答案';
       next.hidden = !passed;
-      skip.hidden = passed;
     }
     function update(changed) {
       if (!currentLearningEpoch()) return;
@@ -161,10 +158,6 @@ export function mountStarter(root, { narrativeHref, themeHref, transferHref }) {
         update(learningCheck.check(state, question.choices.findIndex((choice) => choice.correct)));
         if (learningCheck.passed(state)) next.focus();
       }
-    });
-    skip.addEventListener('click', () => {
-      update({ ...state, status: 'retry', skipped: true });
-      moveTo(stage + 1);
     });
     next.addEventListener('click', () => moveTo(stage + 1));
   }

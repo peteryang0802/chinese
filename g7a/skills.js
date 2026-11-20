@@ -1,4 +1,5 @@
 import { loadRecord, saveRecord, listConflicts, saveConflictDraft, currentLearningEpoch } from './skills-storage.js?v=parents1';
+import { methodEvidence } from './skill-transfer-evidence.js?v=1';
 
 const orderedIds = ['narrative', 'paragraph', 'structure', 'theme', 'explanation', 'punctuation', 'words'];
 let skills = [];
@@ -41,14 +42,34 @@ const keywords = {
 };
 const extraSkills = {
   'practice-1': ['paragraph', 'punctuation'],
+  'writing-1': ['words', 'paragraph'],
   'practice-2': ['words', 'punctuation'],
   'writing-2': ['narrative', 'punctuation'],
+  'topic-2': ['narrative', 'theme'],
   'practice-3': ['paragraph', 'theme'],
   'writing-3': ['theme'],
+  'book-3': ['theme', 'paragraph'],
+  'poems-3': ['words'],
   'practice-4': ['paragraph', 'structure'],
   'writing-4': ['structure'],
+  'topic-4': ['theme'],
   'task-5b': ['explanation'],
   'task-5c': ['explanation', 'narrative'],
+  'practice-6': ['words', 'narrative'],
+  'writing-6': ['narrative', 'structure'],
+  'book-6': ['narrative', 'theme'],
+  'poems-6': ['words'],
+};
+
+const relatedLessonMethods = {
+  1: ['words','paragraph'], 2: ['paragraph','theme'], 3: ['paragraph','structure'],
+  4: ['words'], 5: ['narrative','theme'], 6: ['narrative','punctuation','theme'],
+  7: ['words','punctuation'], 8: ['narrative','words'], 9: ['paragraph','theme','structure'],
+  10: ['theme','structure'], 11: ['narrative','structure'], 12: ['words'],
+  13: ['explanation','theme'], 14: ['narrative','theme'], 15: ['structure','words'],
+  16: ['structure','theme'], 17: ['narrative','explanation'], 18: ['words','paragraph'],
+  19: ['explanation'], 20: ['narrative','structure'], 21: ['narrative','structure'],
+  22: ['theme','punctuation'], 23: ['narrative'], 24: ['narrative','theme'],
 };
 
 const escapeHtml = (value) => String(value ?? '').replace(/[&<>"']/g, (character) => ({
@@ -103,7 +124,7 @@ function lastExercise() {
 }
 
 function attemptStatus(record) {
-  if (record.revisionDone || record.keptOriginal) return '已自查';
+  if (record.selfReviewed === true) return '已自评';
   if (hasText(record.revision)) return '有改答草稿';
   if (record.submitted) return '已交初答';
   return hasText(record.draft) ? '有草稿' : '';
@@ -253,8 +274,7 @@ function quickQuestion(data, key, nextId) {
     <p class="skill-option-feedback" role="status"></p>
     <div class="skill-actions">
       <button type="button" class="${nextId ? 'skill-button' : 'skill-secondary'}" data-quick-check>核对答案</button>
-      ${nextId ? '<a class="skill-button" href="#' + nextId + '" data-recall-next hidden>到课文里试一步 →</a>'
-        + '<a class="learning-back learning-skip" href="#' + nextId + '" data-quick-skip>先跳过</a>' : ''}
+      ${nextId ? '<a class="skill-button" href="#' + nextId + '" data-recall-next hidden>到课文里试一步 →</a>' : ''}
     </div>
   </fieldset>`;
 }
@@ -266,7 +286,6 @@ function bindQuick(parent, data, key, onChoice) {
   const feedback = group.querySelector('.skill-option-feedback');
   const next = group.querySelector('[data-recall-next]');
   const check = group.querySelector('[data-quick-check]');
-  const skip = group.querySelector('[data-quick-skip]');
   const method = next && group.parentElement.querySelector('.skill-method');
   let state = learningCheck.restore(loadRecord(key).data, data.options.length);
   let pending = Promise.resolve();
@@ -287,10 +306,7 @@ function bindQuick(parent, data, key, onChoice) {
     check.hidden = passed;
     check.disabled = state.choice === null && !retry;
     check.textContent = retry ? '按线索再试' : '核对答案';
-    if (next) {
-      next.hidden = !passed;
-      skip.hidden = passed;
-    }
+    if (next) next.hidden = !passed;
   }
 
   function update(changed) {
@@ -320,7 +336,6 @@ function bindQuick(parent, data, key, onChoice) {
       if (learningCheck.passed(state)) (next ?? status).focus();
     }
   });
-  skip?.addEventListener('click', () => update({ ...state, status: 'retry', skipped: true }));
 }
 
 function exerciseTemplate(item, id, nextId, skillId) {
@@ -349,21 +364,22 @@ function exerciseTemplate(item, id, nextId, skillId) {
     <div class="skill-history" hidden></div>
     <section class="skill-review" hidden aria-labelledby="${id}-review">
       <h4 id="${id}-review" tabindex="-1">看看哪一点可以改</h4>
-      <ul>${item.criteria.map((criterion) => '<li>' + escapeHtml(criterion) + '</li>').join('')}</ul>
       <p><strong>一种答法</strong> ${escapeHtml(item.example)}</p>
       <p><strong>容易漏的地方</strong> ${escapeHtml(item.commonError)}</p>
       <div class="skill-correction">
+        ${item.criteria.map((criterion, index) => '<fieldset class="skill-review-check"><legend>' + escapeHtml(criterion) + '</legend>'
+          + ['做到了','还要补'].map((label, choice) => '<button type="button" aria-pressed="false" data-skill-criterion="'+index
+            +'" data-skill-self-check="'+choice+'">'+label+'</button>').join('') + '</fieldset>').join('')}
         <details class="skill-original"><summary>对照我的初答</summary><p></p></details>
-        <label for="${id}-revision">我现在会这样答</label>
+        <label for="${id}-revision">我现在会这样答（选做）</label>
         <textarea id="${id}-revision" rows="3" placeholder="补上漏掉的部分，或用自己的话写一遍" data-field="revision"></textarea>
         <div class="skill-actions">
-          <button type="button" class="skill-button" data-action="finish">保存这次订正</button>
+          <button type="button" class="skill-button" data-action="finish">完成自评</button>
           <a class="skill-button" data-action="continue" href="${nextId ? '#' + nextId : 'skills.html'}" hidden>
             ${nextId === 'transfer' ? '换一段试试' : nextId ? '用到下一段' : '回到方法目录'} →
           </a>
           <details class="skill-support">
             <summary>其他作答操作</summary>
-            <button type="button" class="skill-secondary" data-action="keep">自查后保留初答</button>
             <button type="button" class="skill-secondary" data-action="restart">保留记录，再练一次</button>
             ${item.lesson === 6 && skillId === 'narrative' ? '<a class="skill-text-link" href="' + skillUrl('theme')
               + '&amp;lesson=6&amp;from=narrative">用刚才的梗概读《散步》的中心</a>' : ''}
@@ -395,12 +411,14 @@ function bindExercise(root, item, id, skillId, oldId = id) {
   const conflictBox = exercise.querySelector('.skill-conflict');
   const summaryStatus = exercise.closest('.skill-task')?.querySelector('.skill-task-progress');
   const original = exercise.querySelector('.skill-original p');
+  const checks = [...review.querySelectorAll('[data-skill-self-check]')];
   let { data: record, version } = loadRecord(key, oldKey);
   let pending = Promise.resolve();
   let updateNumber = 0;
   let conflict = false;
   let conflictBackupKey;
   let storageUnavailable = false;
+  const hasEveryCheck = () => item.criteria.every((_, index) => [0, 1].includes(record.selfChoices?.[index]));
 
   function updateSummary() {
     if (summaryStatus) summaryStatus.textContent = attemptStatus(record);
@@ -441,8 +459,13 @@ function bindExercise(root, item, id, skillId, oldId = id) {
     help.hidden = record.submitted === true || showHint.hidden && (!showExample || showExample.hidden);
     review.hidden = record.submitted !== true && record.viewedExample !== true;
     exercise.querySelector('.skill-correction').hidden = record.submitted !== true;
-    const done = Boolean(record.revisionDone || record.keptOriginal);
+    const done = record.selfReviewed === true && hasEveryCheck() && learningReview.meaningful(record.draft ?? '');
+    checks.forEach((button) => {
+      const picked = Number(button.dataset.skillSelfCheck) === record.selfChoices?.[Number(button.dataset.skillCriterion)];
+      button.setAttribute('aria-pressed', String(picked));
+    });
     finish.hidden = done;
+    finish.disabled = !hasEveryCheck();
     proceed.hidden = !done;
     original.textContent = record.draft ?? '';
     updateSummary();
@@ -503,7 +526,7 @@ function bindExercise(root, item, id, skillId, oldId = id) {
   if (item.quick) bindQuick(exercise, item.quick, id + '-quick');
   if (record.submitted) {
     status.textContent = record.usedHint ? '已提交初答，作答时看过提示。' : '已提交初答，作答前未打开提示。';
-    if (record.revisionDone || record.keptOriginal) reviewStatus.textContent = '这次自查已保存。';
+    if (record.selfReviewed === true) reviewStatus.textContent = '这次自评已保存。';
   }
   if (listConflicts(key, oldKey).length) showBackups(null, '这题留有并行作答的副本。');
 
@@ -527,8 +550,8 @@ function bindExercise(root, item, id, skillId, oldId = id) {
     review.querySelector('h4').focus();
   });
   submit.addEventListener('click', () => {
-    if (!hasText(draft.value)) {
-      status.textContent = '先写一句你的想法。如果卡住，可以打开提示。';
+    if (!learningReview.meaningful(draft.value)) {
+      status.textContent = '先用几个词把自己的想法写清楚。如果卡住，可以打开提示。';
       draft.focus();
       return;
     }
@@ -540,29 +563,32 @@ function bindExercise(root, item, id, skillId, oldId = id) {
   });
   revision.addEventListener('input', () => {
     record.revision = revision.value;
+    record.selfReviewed = false;
     record.revisionDone = false;
     record.keptOriginal = false;
     sync();
     persist('改答草稿已保存。', reviewStatus);
   });
+  checks.forEach((button) => button.addEventListener('click', () => {
+    const index = Number(button.dataset.skillCriterion);
+    const choice = Number(button.dataset.skillSelfCheck);
+    const selected = { ...record.selfChoices, [index]: choice };
+    record.selfChoices = selected;
+    record.selfReviewed = false;
+    sync();
+    persist('自评选项已记录。', reviewStatus);
+  }));
   finish.addEventListener('click', () => {
-    if (!hasText(revision.value)) {
-      reviewStatus.textContent = '把现在的想法写下来，或自查后保留初答。';
-      revision.focus();
+    if (!learningReview.meaningful(record.draft ?? '')) {
+      reviewStatus.textContent = '这份旧初答还需要补充。请展开其他作答操作，选「保留记录，再练一次」。';
       return;
     }
     record.revision = revision.value;
-    record.revisionDone = true;
-    record.keptOriginal = false;
+    record.selfReviewed = true;
+    record.revisionDone = learningReview.meaningful(revision.value);
+    record.keptOriginal = !record.revisionDone;
     sync();
-    persist('初答和订正都已保存。', reviewStatus);
-    proceed.focus();
-  });
-  exercise.querySelector('[data-action="keep"]').addEventListener('click', () => {
-    record.keptOriginal = true;
-    record.revisionDone = false;
-    sync();
-    persist('已记录自查，初答及已有草稿均保留。', reviewStatus);
+    persist(Object.values(record.selfChoices).includes(1) ? '已自评。可以继续补写刚才标记的地方。' : '已自评。初答及已有草稿已保存。', reviewStatus);
     proceed.focus();
   });
   exercise.querySelector('[data-action="restart"]').addEventListener('click', () => {
@@ -622,6 +648,29 @@ function usePracticeHeader(skillId) {
   return url.href;
 }
 
+function bindTransferEvidence(section, step, skillId) {
+  const check = section.querySelector('[data-method-evidence-check]');
+  const evidence = section.querySelector('[data-evidence-exercise]');
+  const status = section.querySelector('[data-method-evidence-status]');
+  const draft = section.querySelector('[data-method-open-transfer]');
+  const update = () => {
+    const activity = learningEvidence.activity(section);
+    evidence.hidden = check.hidden = activity.passed;
+    draft.hidden = !activity.passed;
+    status.hidden = !activity.passed;
+    if (activity.passed) status.textContent = '证据核对 · ' + evidence.querySelector('.learning-state').textContent;
+    check.textContent = activity.status === 'retry' ? '按线索再试' : '核对答案';
+    check.disabled = !activity.ready && activity.status !== 'retry';
+  };
+  learningEvidence.connect(section, step, 'g7a-learning-check:method:' + skillId, update, currentLearningEpoch);
+  check.addEventListener('click', () => {
+    const activity = learningEvidence.activity(section);
+    activity.check();
+    if (activity.passed) draft.querySelector('textarea:not([hidden]), h4').focus();
+  });
+  update();
+}
+
 function renderDetail(root, skill, selectedLesson, reusedSummary = '') {
   const entries = skill.entries;
   const lessonIndex = entries.findIndex((entry) => entry.lesson === selectedLesson);
@@ -638,6 +687,7 @@ function renderDetail(root, skill, selectedLesson, reusedSummary = '') {
   document.title = skill.name + ' · 我的语文书房';
   root.classList.add('guided-skill');
   const directory = usePracticeHeader(skill.id);
+  const transfer = methodEvidence(skill.id);
   root.innerHTML = `
     <div class="page-head">
       <h1>${escapeHtml(skill.name)}</h1>
@@ -671,13 +721,17 @@ function renderDetail(root, skill, selectedLesson, reusedSummary = '') {
     </section>
     <section class="skill-section panel" id="transfer" data-skill-pane hidden aria-labelledby="transfer-title">
       <h2 id="transfer-title" tabindex="-1">换一段，自己试</h2>
-      ${exerciseTemplate(skill.transfer, 'transfer-task')}
+      ${learningEvidence.render(transfer, escapeHtml)}
+      <button type="button" class="skill-button" data-method-evidence-check>核对答案</button>
+      <p class="learning-state" data-method-evidence-status role="status" hidden></p>
+      <div data-method-open-transfer hidden>${exerciseTemplate(skill.transfer, 'transfer-task')}</div>
     </section>
     <div class="learning-controls"><button class="learning-back" type="button" data-skill-back hidden>← 上一步</button></div>
     </div></div>`;
   bindQuick(root, skill.recall, recallKey, () => remember(skill.id, 'recall'));
   entries.forEach((entry, index) => bindExercise(root, entry, taskIds[index], skill.id, legacyId(entry, index)));
   bindExercise(root, skill.transfer, 'transfer-task', skill.id);
+  bindTransferEvidence(root.querySelector('#transfer'), transfer, skill.id);
   root.querySelector('#transfer [data-action=continue]').href = directory;
   waitForWrites(root);
 
@@ -716,7 +770,7 @@ export async function mountRelatedSkills() {
   if (!head || document.querySelector('.lesson-skills')) return;
   await loadSkills();
   const matching = skills.filter((skill) => lesson
-    ? skill.entries.some((entry) => entry.lesson === lesson)
+    ? skill.entries.some((entry) => entry.lesson === lesson) || relatedLessonMethods[lesson]?.includes(skill.id)
     : extraSkills[extra]?.includes(skill.id));
   if (!matching.length) return;
 
@@ -771,7 +825,7 @@ function renderFailure(root) {
 async function boot(root) {
   const params = new URLSearchParams(location.search);
   if (params.get('start') === 'walk') {
-    const mountStarter = await readContent(() => import('./skills-starter.js?v=check1'), 'mountStarter');
+    const mountStarter = await readContent(() => import('./skills-starter.js?v=strict-check'), 'mountStarter');
     usePracticeHeader();
     mountStarter(root, {
       narrativeHref: skillUrl('narrative') + '&lesson=6#in-text',
@@ -787,7 +841,7 @@ async function boot(root) {
     let summary = '';
     if (selected.id === 'theme' && Number(params.get('lesson')) === 6) {
       if (params.get('from') === 'walk') {
-        const { walkSummary } = await import('./skills-starter.js?v=check1').catch(() => ({}));
+        const { walkSummary } = await import('./skills-starter.js?v=strict-check').catch(() => ({}));
         summary = walkSummary ?? '';
       } else if (params.get('from') === 'narrative') {
         const narrative = skills.find((skill) => skill.id === 'narrative');

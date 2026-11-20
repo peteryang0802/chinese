@@ -7,7 +7,7 @@
 <meta name="theme-color" content="#1d2a33">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%231d2a33'/%3E%3Cpath d='M8 9h16v15H8z' fill='%23f4ecd8'/%3E%3Cpath d='M16 9v15' stroke='%231d2a33' stroke-width='1.5'/%3E%3C/svg%3E">
 <link rel="stylesheet" href="assets/common.css">
-<link rel="stylesheet" href="assets/directory.css?v=1">
+<link rel="stylesheet" href="assets/directory.css?v=lesson-hook">
 </head>
 <body>
 <a class="skip" href="#main">跳到正文</a>
@@ -29,13 +29,13 @@
   <div class="page-head">
     <h1>初中语文</h1>
   </div>
-  <section class="directory-available" aria-labelledby="available-volume">
-    <h2 id="available-volume">七年级上册</h2>
-    <p>六个单元，含课文、写作和整本书阅读。</p>
+  <section class="directory-available directory-hook" aria-labelledby="available-volume">
+    <p class="eyebrow">七年级上册 · 朱自清《春》</p>
+    <h2 id="available-volume">小草从土里「钻」出来，换成「长」会少了什么？</h2>
     <div class="directory-actions">
       <div id="home-resume" hidden></div>
-      <a class="learning-action" id="enter-directory" href="g7a/index.html">进入七上目录 →</a>
-      <a class="directory-secondary" href="g7a/skills.html">按方法练</a>
+      <a class="learning-action" id="enter-directory" href="g7a/lesson-01.html">翻开《春》 →</a>
+      <a class="directory-secondary" id="home-directory" href="g7a/index.html">查看七上目录</a>
     </div>
   </section>
 
@@ -56,14 +56,17 @@
   var data;
   var slot=document.getElementById('home-resume');
   var entry=document.getElementById('enter-directory');
+  var hook=document.getElementById('available-volume');
+  var eyebrow=hook.previousElementSibling;
 
   function updateResume(){
     var last;
     try{last=localStorage.getItem('g7a-last');}catch(e){}
     slot.hidden=true;
     slot.replaceChildren();
-    entry.className='learning-action';
-    entry.textContent='进入七上目录 →';
+    entry.hidden=false;
+    hook.textContent='小草从土里「钻」出来，换成「长」会少了什么？';
+    eyebrow.textContent='七年级上册 · 朱自清《春》';
     if(!last)return;
     if(!window.BOOK_G7A){
       if(!data){
@@ -86,8 +89,9 @@
     resume.textContent='继续上次：'+(lesson?.title??extra.label)+' →';
     slot.append(resume);
     slot.hidden=false;
-    entry.className='directory-secondary';
-    entry.textContent='查看七上目录';
+    entry.hidden=true;
+    hook.textContent=lesson?.title??extra.label;
+    eyebrow.textContent='七年级上册 · 上次读到这里';
   }
 
   updateResume();

@@ -660,14 +660,15 @@ img,svg{max-width:100%}
   cursor: pointer;
 }
 .learning-action:hover, .guided-flow .btn.primary:hover { background: #164535; }
-.learning-action:disabled, .guided-skill [data-quick-check]:disabled, .guided-starter .walk-check:disabled {
+.learning-action:disabled, .guided-skill :is([data-quick-check], [data-method-evidence-check], [data-action="finish"]):disabled,
+.guided-starter .walk-check:disabled {
   border-color: #9aa69a;
   background: var(--card);
   color: var(--muted);
   cursor: default;
 }
-.learning-skip { font-size: .9rem; }
 .guided-flow .section-label[tabindex="-1"]:focus { outline: none; }
+.guided-flow .learning-core .scene svg { max-height: 190px; }
 
 .guided-flow:has(.evidence-stage:not([hidden])) .page-head .lead { display: none; }
 .guided-flow .evidence-stage .section-label { margin-bottom: 6px; }
@@ -727,6 +728,32 @@ img,svg{max-width:100%}
   background: var(--learning-retry);
   box-shadow: none;
 }
+.draft-self-review { max-width: 52rem; margin: 10px 0 0; }
+.draft-review-panel {
+  margin-block-start: 6px;
+  padding: 10px 12px;
+  background: var(--learning-material);
+  border-inline-start: 3px solid var(--learning-material-line);
+  border-radius: 0 8px 8px 0;
+}
+.draft-review-panel fieldset, .skill-review-check { margin: 8px 0 0; padding: 0; border: 0; }
+.draft-review-panel fieldset legend, .skill-review-check legend { font-weight: 700; }
+.draft-review-panel button, .skill-review-check button {
+  min-height: 44px;
+  margin: 3px 7px 0 0;
+  padding: 5px 9px;
+  border: 1px solid #8c9a8e;
+  border-radius: 7px;
+  background: var(--card);
+  color: var(--ink);
+  cursor: pointer;
+}
+.draft-review-panel button[aria-pressed="true"], .skill-review-check button[aria-pressed="true"] {
+  border-color: var(--learning-material-line);
+  background: #d7e8f5;
+  color: var(--learning-material-ink);
+}
+.guided-skill [data-method-evidence-check] { margin-block-start: 12px; }
 
 @media print {
   .learning-rail, .learning-controls, .learning-directory, .learning-extra,

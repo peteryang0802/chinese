@@ -88,7 +88,6 @@
       get status() { return state.status; },
       get passed() { return learningCheck.passed(state); },
       get ready() { return rows.every(row => state.answers[row.key] !== undefined); },
-      skip() { update({ ...state, status: 'retry', skipped: true }); },
       check() {
         if (state.status === 'retry') {
           update({ ...state, status: 'unchecked', skipped: false });
